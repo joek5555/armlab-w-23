@@ -172,7 +172,6 @@ class ImageListener:
     def callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
-            #cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
         except CvBridgeError as e:
             print(e)
         self.camera.VideoFrame = cv_image
@@ -188,7 +187,6 @@ class TagImageListener:
     def callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, data.encoding)
-            #cv_image = cv2.rotate(cv_image, cv2.ROTATE_180)
         except CvBridgeError as e:
             print(e)
         self.camera.TagImageFrame = cv_image

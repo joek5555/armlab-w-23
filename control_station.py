@@ -141,7 +141,7 @@ class Gui(QMainWindow):
         self.ui.rdoutX.setText(str("%+.2f mm" % (1000 * pos[0])))
         self.ui.rdoutY.setText(str("%+.2f mm" % (1000 * pos[1])))
         self.ui.rdoutZ.setText(str("%+.2f mm" % (1000 * pos[2])))
-        self.ui.rdoutPhi.setText(str("%+.2f rad" % (pos[3])))
+        #self.ui.rdoutPhi.setText(str("%+.2f rad" % (pos[3])))
         #self.ui.rdoutTheta.setText(str("%+.2f" % (pos[4])))
         #self.ui.rdoutPsi.setText(str("%+.2f" % (pos[5])))
 

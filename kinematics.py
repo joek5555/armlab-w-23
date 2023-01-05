@@ -49,7 +49,7 @@ def FK_dh(dh_params, joint_angles, link):
 
 def get_transform_from_dh(a, alpha, d, theta):
     """!
-    @brief      Gets the transformation matrix from dh parameters.
+    @brief      Gets the transformation matrix T from dh parameters.
 
     TODO: Find the T matrix from a row of a DH table
 
@@ -58,7 +58,7 @@ def get_transform_from_dh(a, alpha, d, theta):
     @param      d      d meters
     @param      theta  theta radians
 
-    @return     The 4x4 transform matrix.
+    @return     The 4x4 transformation matrix.
     """
     pass
 
@@ -67,7 +67,8 @@ def get_euler_angles_from_T(T):
     """!
     @brief      Gets the euler angles from a transformation matrix.
 
-                TODO: Implement this function return the Euler angles from a T matrix
+                TODO: Implement this function return the 3 Euler angles from a 4x4 transformation matrix T
+                If you like, add an argument to specify the Euler angles used (xyx, zyz, etc.)
 
     @param      T     transformation matrix
 
@@ -80,29 +81,27 @@ def get_pose_from_T(T):
     """!
     @brief      Gets the pose from T.
 
-                TODO: implement this function return the joint pose from a T matrix of the form (x,y,z,phi) where phi is
-                rotation about base frame y-axis
+                TODO: implement this function return the 6DOF pose vector from a 4x4 transformation matrix T
 
     @param      T     transformation matrix
 
-    @return     The pose from T.
+    @return     The pose vector from T.
     """
     pass
 
 
 def FK_pox(joint_angles, m_mat, s_lst):
     """!
-    @brief      Get a 4-tuple (x, y, z, phi) representing the pose of the desired link
+    @brief      Get a  representing the pose of the desired link
 
                 TODO: implement this function, Calculate forward kinematics for rexarm using product of exponential
-                formulation return a 4-tuple (x, y, z, phi) representing the pose of the desired link note: phi is the euler
-                angle about y in the base frame
+                formulation return a 4x4 homogeneous matrix representing the pose of the desired link
 
     @param      joint_angles  The joint angles
                 m_mat         The M matrix
                 s_lst         List of screw vectors
 
-    @return     a 4-tuple (x, y, z, phi) representing the pose of the desired link
+    @return     a 4x4 homogeneous matrix representing the pose of the desired link
     """
     pass
 
@@ -126,10 +125,10 @@ def IK_geometric(dh_params, pose):
     """!
     @brief      Get all possible joint configs that produce the pose.
 
-                TODO: Convert a desired end-effector pose as np.array x,y,z,phi to joint angles
+                TODO: Convert a desired end-effector pose vector as np.array to joint angles
 
     @param      dh_params  The dh parameters
-    @param      pose       The desired pose as np.array x,y,z,phi
+    @param      pose       The desired pose vector as np.array 
 
     @return     All four possible joint configurations in a numpy array 4x4 where each row is one possible joint
                 configuration
