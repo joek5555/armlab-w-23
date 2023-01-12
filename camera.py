@@ -25,6 +25,7 @@ class Camera():
         @brief      Construcfalsets a new instance.
         """
         self.VideoFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
+        self.GridFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.TagImageFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.DepthFrameRaw = np.zeros((720, 1280)).astype(np.uint16)
         """ Extra arrays for colormaping the depth image"""
@@ -33,12 +34,15 @@ class Camera():
 
         # mouse clicks & calibration variables
         self.cameraCalibrated = False
-        self.intrinsic_matrix = np.array([])
-        self.extrinsic_matrix = np.array([])
+        self.intrinsic_matrix = np.eye(3)
+        self.extrinsic_matrix = np.eye(4)
         self.last_click = np.array([0, 0])
         self.new_click = False
         self.rgb_click_points = np.zeros((5, 2), int)
         self.depth_click_points = np.zeros((5, 2), int)
+        self.grid_x_points = np.arange(-450, 500, 50)
+        self.grid_y_points = np.arange(-175, 525, 50)
+        self.grid_points = np.array(np.meshgrid(self.grid_x_points, self.grid_y_points))
         self.tag_detections = np.array([])
         self.tag_locations = [[-250, -25], [250, -25], [250, 275]]
         """ block info """
@@ -86,6 +90,21 @@ class Camera():
 
         try:
             frame = cv2.resize(self.VideoFrame, (1280, 720))
+            img = QImage(frame, frame.shape[1], frame.shape[0],
+                         QImage.Format_RGB888)
+            return img
+        except:
+            return None
+
+    def convertQtGridFrame(self):
+        """!
+        @brief      Converts frame to format suitable for Qt
+
+        @return     QImage
+        """
+
+        try:
+            frame = cv2.resize(self.GridFrame, (1280, 720))
             img = QImage(frame, frame.shape[1], frame.shape[0],
                          QImage.Format_RGB888)
             return img
@@ -161,6 +180,15 @@ class Camera():
         """
         pass
 
+    def projectGridInRGBImage(self):
+        """!
+        @brief      projects
+
+                    TODO: Use the intrinsic and extrinsic matricies to project the gridpoints 
+                    on the board into pixel coordinates. copy self.VideoFrame to self.GridFrame and
+                    and draw on self.GridFrame the grid intersection points from self.grid_points
+        """
+        pass
 
 class ImageListener:
     def __init__(self, topic, camera):
@@ -264,8 +292,10 @@ class VideoThread(QThread):
             rgb_frame = self.camera.convertQtVideoFrame()
             depth_frame = self.camera.convertQtDepthFrame()
             tag_frame = self.camera.convertQtTagImageFrame()
+            self.camera.projectGridInRGBImage()
+            grid_frame = self.camera.convertQtGridImageFrame()
             if ((rgb_frame != None) & (depth_frame != None)):
-                self.updateFrame.emit(rgb_frame, depth_frame, tag_frame)
+                self.updateFrame.emit(rgb_frame, depth_frame, tag_frame, grid_frame)
             time.sleep(0.03)
             if __name__ == '__main__':
                 cv2.imshow(
