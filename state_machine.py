@@ -5,6 +5,7 @@ from PyQt4.QtCore import (QThread, Qt, pyqtSignal, pyqtSlot, QTimer)
 import time
 import numpy as np
 import rospy
+#from rxarm import (set_positions)
 
 class StateMachine():
     """!
@@ -109,6 +110,15 @@ class StateMachine():
               Make sure you respect estop signal
         """
         self.status_message = "State: Execute - Executing motion plan"
+        self.current_state = "execute"
+
+
+        num_states  = len(self.waypoints)
+        for i in range(num_states):
+            self.rxarm.set_positions(self.waypoints[i])
+            rospy.sleep(5)
+
+
         self.next_state = "idle"
 
     def calibrate(self):
