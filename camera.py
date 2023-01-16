@@ -20,6 +20,7 @@ class Camera():
     """!
     @brief      This class describes a camera.
     """
+
     def __init__(self):
         """!
         @brief      Construcfalsets a new instance.
@@ -187,6 +188,7 @@ class Camera():
                     TODO: Use the intrinsic and extrinsic matricies to project the gridpoints 
                     on the board into pixel coordinates. copy self.VideoFrame to self.GridFrame and
                     and draw on self.GridFrame the grid intersection points from self.grid_points
+                    (hint: use the cv2.circle function to draw circles on the image)
         """
         pass
 
@@ -264,7 +266,7 @@ class DepthListener:
 
 
 class VideoThread(QThread):
-    updateFrame = pyqtSignal(QImage, QImage, QImage)
+    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
 
     def __init__(self, camera, parent=None):
         QThread.__init__(self, parent=parent)
@@ -287,15 +289,17 @@ class VideoThread(QThread):
             cv2.namedWindow("Image window", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Depth window", cv2.WINDOW_NORMAL)
             cv2.namedWindow("Tag window", cv2.WINDOW_NORMAL)
+            cv2.namedWindow("Grid window", cv2.WINDOW_NORMAL)
             time.sleep(0.5)
         while True:
             rgb_frame = self.camera.convertQtVideoFrame()
             depth_frame = self.camera.convertQtDepthFrame()
             tag_frame = self.camera.convertQtTagImageFrame()
             self.camera.projectGridInRGBImage()
-            grid_frame = self.camera.convertQtGridImageFrame()
+            grid_frame = self.camera.convertQtGridFrame()
             if ((rgb_frame != None) & (depth_frame != None)):
-                self.updateFrame.emit(rgb_frame, depth_frame, tag_frame, grid_frame)
+                self.updateFrame.emit(
+                    rgb_frame, depth_frame, tag_frame, grid_frame)
             time.sleep(0.03)
             if __name__ == '__main__':
                 cv2.imshow(
@@ -305,6 +309,8 @@ class VideoThread(QThread):
                 cv2.imshow(
                     "Tag window",
                     cv2.cvtColor(self.camera.TagImageFrame, cv2.COLOR_RGB2BGR))
+                cv2.imshow("Grid window",
+                    cv2.cvtColor(self.camera.GridFrame, cv2.COLOR_RGB2BGR))
                 cv2.waitKey(3)
                 time.sleep(0.03)
 
