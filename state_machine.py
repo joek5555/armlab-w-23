@@ -39,6 +39,8 @@ class StateMachine():
             [np.pi/2,         0.5,     0.3,      0.0,     0.0],
             [0.0,             0.0,     0.0,      0.0,     0.0]]
 
+        self.taught_waypoints = []
+
     def set_next_state(self, state):
         """!
         @brief      Sets the next state.
@@ -77,6 +79,12 @@ class StateMachine():
 
         if self.next_state == "manual":
             self.manual()
+
+        if self.next_state == "record_waypoint":
+            self.record_waypoint()
+            
+        if self.next_state == "clear_waypoints":
+            self.clear_waypoints()
 
 
     """Functions run for each state"""
@@ -130,6 +138,30 @@ class StateMachine():
 
         """TODO Perform camera calibration routine here"""
         self.status_message = "Calibration - Completed Calibration"
+
+
+    def record_waypoint(self):
+        self.current_state = "record waypoint"
+        
+
+        self.taught_waypoints.append(self.rxarm.get_positions())
+        print("Taught waypoint")
+        print(self.taught_waypoints[-1])
+
+        self.next_state = "idle"
+
+
+    def clear_waypoints(self):
+        self.current_state = "clear waypoints"
+        
+
+        print("Taught Waypoints before")
+        print(self.taught_waypoints)
+        self.taught_waypoints = []
+        print("Taught Waypoints after clear")
+        print(self.taught_waypoints)
+
+        self.next_state = "idle"
 
     """ TODO """
     def detect(self):
