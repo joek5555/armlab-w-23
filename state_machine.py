@@ -116,7 +116,7 @@ class StateMachine():
         num_states  = len(self.waypoints)
         for i in range(num_states):
             self.rxarm.set_positions(self.waypoints[i])
-            rospy.sleep(5)
+            rospy.sleep(2.5)
 
 
         self.next_state = "idle"
