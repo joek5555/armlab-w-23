@@ -86,6 +86,15 @@ class StateMachine():
         if self.next_state == "clear_waypoints":
             self.clear_waypoints()
 
+        if self.next_state == "exectue_taught_path":
+            self.exectue_taught_path()
+        
+        if self.next_state == "record_gripper_open":
+            self.record_gripper_open()
+
+        if self.next_state == "record_gripper_close":
+            self.record_gripper_close()
+
 
     """Functions run for each state"""
 
@@ -123,11 +132,7 @@ class StateMachine():
 
         num_states  = len(self.waypoints)
         for i in range(num_states):
-            self.rxarm.set_positions(self.waypoints[i])
-            rospy.sleep(2.5)
-
-
-        self.next_state = "idle"
+            self.rxarm.set_positions(waypoints[i])
 
     def calibrate(self):
         """!
@@ -143,18 +148,15 @@ class StateMachine():
     def record_waypoint(self):
         self.current_state = "record waypoint"
         
-
         self.taught_waypoints.append(self.rxarm.get_positions())
         print("Taught waypoint")
         print(self.taught_waypoints[-1])
 
         self.next_state = "idle"
 
-
     def clear_waypoints(self):
         self.current_state = "clear waypoints"
         
-
         print("Taught Waypoints before")
         print(self.taught_waypoints)
         self.taught_waypoints = []
@@ -162,6 +164,86 @@ class StateMachine():
         print(self.taught_waypoints)
 
         self.next_state = "idle"
+    
+    def record_gripper_open (self):
+        self.current_state = "record_gripper_open"
+        self.taught_waypoints.append("open_gripper")
+        self.rxarm.open_gripper()
+        rospy.sleep(2.5)
+
+        self.next_state = "idle"
+
+    def record_gripper_close(self):
+        self.current_state = "record_gripper_close"
+        
+        self.taught_waypoints.append("close_gripper")
+        self.rxarm.close_gripper()
+        rospy.sleep(2.5)
+
+        #print("Taught waypoint")
+        #print(self.taught_waypoints[-1])
+
+        self.next_state = "idle"
+
+    def exectue_taught_path(self):
+        self.current_state = "exectue_taught_path"
+
+        joint_positions_file = open('joint_positions.txt', 'w')
+
+    
+        num_states  = len(self.taught_waypoints)
+        for i in range(num_states):
+            if self.taught_waypoints[i] == "open_gripper":
+                self.rxarm.open_gripper()
+                for j in range(25):
+                    position = self.rxarm.get_positions()
+                    joint_positions_string = ""
+                    for k in range (5):
+                        joint_positions_string += str(position[k])
+                        joint_positions_string += " "
+
+                    joint_positions_file.write(joint_positions_string)
+                    joint_positions_file.write("\n")
+                    print(joint_positions_string)
+                    print()
+                    rospy.sleep(0.1)
+
+            elif self.taught_waypoints[i] == "close_gripper":
+                self.rxarm.close_gripper()
+                for j in range(25):
+                    position = self.rxarm.get_positions()
+                    joint_positions_string = ""
+                    for k in range (5):
+                        joint_positions_string += str(position[k])
+                        joint_positions_string += " "
+
+                    joint_positions_file.write(joint_positions_string)
+                    joint_positions_file.write("\n")
+                    print(joint_positions_string)
+                    print()
+                    rospy.sleep(0.1)
+            else:
+                self.rxarm.set_positions(self.taught_waypoints[i])
+                for j in range(25):
+                    position = self.rxarm.get_positions()
+                    joint_positions_string = ""
+                    for k in range (5):
+                        joint_positions_string += str(position[k])
+                        joint_positions_string += " "
+
+                    joint_positions_file.write(joint_positions_string)
+                    joint_positions_file.write("\n")
+                    print(joint_positions_string)
+                    print()
+                    rospy.sleep(0.1)
+
+
+            
+            
+
+
+        self.next_state = "idle"
+    
 
     """ TODO """
     def detect(self):

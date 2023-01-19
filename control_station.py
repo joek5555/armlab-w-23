@@ -102,7 +102,12 @@ class Gui(QMainWindow):
         self.ui.btnUser6.setText('Record Waypoint')
         self.ui.btnUser6.clicked.connect(partial(nxt_if_arm_init, 'record_waypoint'))
         self.ui.btnUser7.setText('Execute Taught Path')
-        self.ui.btnUser7.clicked.connect(partial(nxt_if_arm_init, 'exectue_waypoints'))
+        self.ui.btnUser7.clicked.connect(partial(nxt_if_arm_init, 'exectue_taught_path'))
+        self.ui.btnUser8.setText('Record Gripper Open')
+        self.ui.btnUser8.clicked.connect(partial(nxt_if_arm_init, 'record_gripper_open'))
+        self.ui.btnUser9.setText('Record Gripper Close')
+        self.ui.btnUser9.clicked.connect(partial(nxt_if_arm_init, 'record_gripper_close'))
+        
 
         # Sliders
         for sldr in self.joint_sliders:
