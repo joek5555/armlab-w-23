@@ -5,6 +5,8 @@ from PyQt4.QtCore import (QThread, Qt, pyqtSignal, pyqtSlot, QTimer)
 import time
 import numpy as np
 import rospy
+from apriltag_ros.msg import AprilTagDetectionArray # jk edit
+import cv2
 #from rxarm import (set_positions)
 
 class StateMachine():
@@ -40,6 +42,7 @@ class StateMachine():
             [0.0,             0.0,     0.0,      0.0,     0.0]]
 
         self.taught_waypoints = []
+        self.tag_camera_pose = []
 
     def set_next_state(self, state):
         """!
@@ -134,6 +137,21 @@ class StateMachine():
         for i in range(num_states):
             self.rxarm.set_positions(waypoints[i])
 
+    def tag_detections_callback(self, data):
+        tag_detections_sub.unregister()
+        self.tag_camera_pose = []
+        
+        for i in range(4):
+            if len(data.detections[i].id) == 1:
+                #position = np.array()
+                self.tag_camera_pose.insert(data.detections[i].id[0] - 1, np.array([data.detections[i].pose.pose.pose.position.x, 
+                                                                              data.detections[i].pose.pose.pose.position.y, 
+                                                                              data.detections[i].pose.pose.pose.position.z]))
+                #tag_camera_pose.insert(data.detections[i].id[0] - 1, data.detections[i].pose.pose.pose.position.x)
+                
+ 
+
+
     def calibrate(self):
         """!
         @brief      Gets the user input to perform the calibration
@@ -142,6 +160,47 @@ class StateMachine():
         self.next_state = "idle"
 
         """TODO Perform camera calibration routine here"""
+        
+        
+        # listen to tag_detections topic
+        #rospy.init_node('april_tag_listener', anonymous=True)
+        global tag_detections_sub
+        tag_detections_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tag_detections_callback)
+        rospy.sleep(0.1)
+        #print(self.tag_camera_pose)
+        
+
+        #CV2.solvepnp
+        intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)])
+        model_points = np.array([(-0.25, -0.025, 0), (0.25, -0.025, 0), (0.25, 0.275,0),(-0.25, 0.275, 0)])
+        image_points = np.zeros((4,2))
+        for i in range(4):
+            #cramera_pos = self.tag_camera_pose[i].transpose()
+            camera_pos = self.tag_camera_pose[i].reshape((3,1))
+            image_pos = np.dot(intrinsic_matrix, camera_pos)/camera_pos[2]
+            image_points[i] = (image_pos[0], image_pos[1])
+            
+        dist_coeffs = np.zeros((4,1))
+
+        (success, rotation_vector, translation_vector) =cv2.solvePnP(model_points,image_points,intrinsic_matrix,dist_coeffs,flags = 0) 
+        rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
+        #print("Success: ")
+        #print(success)
+        print("Rotation_matrix")
+        print(rotation_matrix)
+        print("Translation_vector")
+        print(translation_vector)
+        print(rotation_matrix.shape)
+        translation_vector = translation_vector.reshape((3,1))
+        print(translation_vector.shape)
+        extrinsic = np.append(rotation_matrix, translation_vector, axis = 1)
+        
+        extrinsic = np.append(extrinsic, np.array([0,0,0,1]).reshape(1,4), axis = 0)
+        
+        print("Extrinsic Matrix")
+        print(extrinsic)
+
+
         self.status_message = "Calibration - Completed Calibration"
 
 
