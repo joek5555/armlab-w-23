@@ -226,8 +226,7 @@ class StateMachine():
         self.tag_camera_measurements = 0
         self.status_message = "Calibration - Completed Calibration"
         print("grid points")
-        print(self.camera.grid_points2)
-        print(self.camera.grid_points2.shape)
+        
 
 
     def record_waypoint(self):

@@ -203,7 +203,7 @@ class Camera():
         grid_camera_coord = np.dot(self.extrinsic_matrix, self.grid_points2)
         z_camera_coord = grid_camera_coord[2,:]
         grid_pixel_coord = np.dot(self.intrinsic_matrix, grid_camera_coord[0:3,:])
-        print(grid_pixel_coord)
+        #print(grid_pixel_coord)
         #for i in range(np.shape(grid_pixel_coord)[1]):
         #    cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 10, (255,0,0), -1)
 
