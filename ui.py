@@ -525,6 +525,21 @@ class Ui_MainWindow(object):
         self.rdoutStatus.setWordWrap(True)
         self.rdoutStatus.setObjectName(_fromUtf8("rdoutStatus"))
         self.horizontalLayout_14.addWidget(self.rdoutStatus)
+
+        # jk add
+        self.calibration_status = QtGui.QLabel(self.centralwidget) 
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.calibration_status.setFont(font)
+        self.calibration_status.setTextFormat(QtCore.Qt.AutoText)
+        self.calibration_status.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.calibration_status.setWordWrap(True)
+        self.calibration_status.setObjectName(_fromUtf8("calibration_status"))
+        #self.horizontalLayout_14.addWidget(self.calibration_status)
+        self.horizontalLayout_2.addWidget(self.calibration_status)
+        # jk add
+        
         self.verticalLayout_4.addLayout(self.horizontalLayout_14)
         self.horizontalLayout_13.addLayout(self.verticalLayout_4)
         self.verticalLayout_11 = QtGui.QVBoxLayout()
@@ -693,6 +708,7 @@ class Ui_MainWindow(object):
         self.rdoutAccelTime.setText(_translate("MainWindow", "0", None))
         self.label_3.setText(_translate("MainWindow", "Status:", None))
         self.rdoutStatus.setText(_translate("MainWindow", "Waiting for Inputs", None))
+        self.calibration_status.setText(_translate("MainWindow", "Camera Not Calibrated", None)) # jk added
         self.btn_estop.setText(_translate("MainWindow", "EMERGENCY STOP", None))
         self.btn_init_arm.setText(_translate("MainWindow", "INITIALIZE ARM", None))
         self.btn_sleep_arm.setText(_translate("MainWindow", "SLEEP ARM", None))
