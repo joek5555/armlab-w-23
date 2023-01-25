@@ -171,18 +171,18 @@ class StateMachine():
         
 
         #CV2.solvepnp
-        intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)])
+        
         model_points = np.array([(-0.25, -0.025, 0), (0.25, -0.025, 0), (0.25, 0.275,0),(-0.25, 0.275, 0)])
         image_points = np.zeros((4,2))
         for i in range(4):
             #cramera_pos = self.tag_camera_pose[i].transpose()
             camera_pos = self.tag_camera_pose[i].reshape((3,1))
-            image_pos = np.dot(intrinsic_matrix, camera_pos)/camera_pos[2]
+            image_pos = np.dot(self.camera.intrinsic_matrix, camera_pos)/camera_pos[2]
             image_points[i] = (image_pos[0], image_pos[1])
             
         dist_coeffs = np.zeros((4,1))
 
-        (success, rotation_vector, translation_vector) =cv2.solvePnP(model_points,image_points,intrinsic_matrix,dist_coeffs,flags = 0) 
+        (success, rotation_vector, translation_vector) =cv2.solvePnP(model_points,image_points,self.camera.intrinsic_matrix,dist_coeffs,flags = 0) 
         rotation_matrix, _ = cv2.Rodrigues(rotation_vector)
         #print("Success: ")
         #print(success)
@@ -193,12 +193,12 @@ class StateMachine():
         print(rotation_matrix.shape)
         translation_vector = translation_vector.reshape((3,1))
         print(translation_vector.shape)
-        extrinsic = np.append(rotation_matrix, translation_vector, axis = 1)
+        self.camera.extrinsic_matrix = np.append(rotation_matrix, translation_vector, axis = 1)
         
-        extrinsic = np.append(extrinsic, np.array([0,0,0,1]).reshape(1,4), axis = 0)
+        self.camera.extrinsic_matrix = np.append(self.camera.extrinsic_matrix, np.array([0,0,0,1]).reshape(1,4), axis = 0)
         
         print("Extrinsic Matrix")
-        print(extrinsic)
+        print(self.camera.extrinsic_matrix)
 
 
         self.status_message = "Calibration - Completed Calibration"
