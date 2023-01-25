@@ -138,9 +138,14 @@ class Gui(QMainWindow):
 
     """ Slots attach callback functions to signals emitted from threads"""
 
-    @pyqtSlot(str)
-    def updateStatusMessage(self, msg):
-        self.ui.rdoutStatus.setText(msg)
+    @pyqtSlot(str,str)
+    def updateStatusMessage(self, status_msg,calibration_msg):
+        self.ui.rdoutStatus.setText(status_msg)
+        self.ui.calibration_status.setText(calibration_msg)
+
+    #@pyqtSlot(str)
+    #def updateCalibrationMessage(self, calibration_msg):
+    #    self.ui.calibration_status.setText(calibration_msg)
 
     @pyqtSlot(list)
     def updateJointReadout(self, joints):
@@ -157,8 +162,8 @@ class Gui(QMainWindow):
         #self.ui.rdoutTheta.setText(str("%+.2f" % (pos[4])))
         #self.ui.rdoutPsi.setText(str("%+.2f" % (pos[5])))
 
-    @pyqtSlot(QImage, QImage, QImage)
-    def setImage(self, rgb_image, depth_image, tag_image):
+    @pyqtSlot(QImage, QImage, QImage, QImage)
+    def setImage(self, rgb_image, depth_image, tag_image, grid_image):
         """!
         @brief      Display the images from the camera.
 
@@ -171,6 +176,8 @@ class Gui(QMainWindow):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(depth_image))
         if (self.ui.radioUsr1.isChecked()):
             self.ui.videoDisplay.setPixmap(QPixmap.fromImage(tag_image))
+        if (self.ui.radioUsr2.isChecked()):
+            self.ui.videoDisplay.setPixmap(QPixmap.fromImage(grid_image))
 
     """ Other callback functions attached to GUI elements"""
 
@@ -232,9 +239,18 @@ class Gui(QMainWindow):
         pt = mouse_event.pos()
         if self.camera.DepthFrameRaw.any() != 0:
             z = self.camera.DepthFrameRaw[pt.y()][pt.x()]
+            
+            image_coord = np.array([[pt.x()], [pt.y()], [1]])
+            camera_coord = np.ones([4,1])
+            camera_coord[0:3,:] = np.dot((z),np.dot(np.linalg.inv(self.camera.intrinsic_matrix), image_coord))
+            
+            world_coord = np.dot(np.linalg.inv(self.camera.extrinsic_matrix), camera_coord)
+            
+
             self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" %
                                              (pt.x(), pt.y(), z))
-            self.ui.rdoutMouseWorld.setText("(-,-,-)")
+            self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)"%
+                                            (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
 
     def calibrateMousePress(self, mouse_event):
         """!
