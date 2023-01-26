@@ -8,6 +8,9 @@ There are some functions to start with, you may need to implement a few more
 import numpy as np
 # expm is a matrix exponential function
 from scipy.linalg import expm
+from scipy.spatial.transform import Rotation
+import cv2
+
 import math
 
 
@@ -77,19 +80,38 @@ def get_euler_angles_from_T(T):
     @param      T     transformation matrix
 
     @return     The euler angles from T.
+
     """
-    sy = math.sqrt(T[0,0]*T[0,0]+T[1,0]*T[1,0])
-    singular = sy < 1e-6
-    
-    if not singular:
-        x = math.atan2(T[2,1], T[2,2])
-        y = math.atan2(-T[2,0],sy)
-        z = math.atan2(T[1,0],T[0,0])
+    xyz = True
+    if xyz:
+        sy = math.sqrt(T[0,0]*T[0,0]+T[1,0]*T[1,0])
+        singular = sy < 1e-6
+        
+        if not singular:
+            x = math.atan2(T[2,1], T[2,2])
+            y = math.atan2(-T[2,0],sy)
+            z = math.atan2(T[1,0],T[0,0])
+        else:
+            x = math.atan2(-T[1,2], T[1,1])
+            y = math.atan2(-T[2,0], sy)
+            z = 0
+
+        return(np.array([x,y,z]))
     else:
-        x = math.atan2(-T[1,2], T[1,1])
-        y = math.atan2(-T[2,0], sy)
-        z = 0
-    return np.array([x,y,z])
+
+
+        #Rot_matrix = Rotation.from_matrix([T[0:3,0:3]])
+        #Rot_matrix = Rotation.from_matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+        #Rot_matrix = T[0:3,0:3]
+        Rot_vector = cv2.Rodrigues(T[0:3,0:3])
+    
+        Rot_matrix = Rotation.from_rotvec([Rot_vector[0,0], Rot_vector[1,0], Rot_vector[2,0]])
+    
+
+        Rot_results = Rot_matrix.as_euler('zyz', degrees = True)
+
+        return Rot_results
+        
 
 
 def get_pose_from_T(T):
