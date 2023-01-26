@@ -221,11 +221,12 @@ class StateMachine():
             print(np.linalg.inv(self.camera.extrinsic_matrix))
 
             self.calibration_message= "Camera Calibrated with " + str(self.tag_camera_measurements) + " measurements"
+            self.camera.camera_calibrated = True
 
         self.tag_camera_pose = [0,0,0,0]
         self.tag_camera_measurements = 0
         self.status_message = "Calibration - Completed Calibration"
-        print("grid points")
+        
         
 
 

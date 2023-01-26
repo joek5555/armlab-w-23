@@ -34,7 +34,7 @@ class Camera():
         self.DepthFrameRGB = np.array([])
 
         # mouse clicks & calibration variables
-        self.cameraCalibrated = False
+        self.camera_calibrated = False
         #self.intrinsic_matrix = np.eye(3)
         self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)])
         self.extrinsic_matrix = np.eye(4)
@@ -50,6 +50,8 @@ class Camera():
         
         self.grid_points2 = np.array([np.ravel(self.grid_points[0,:,:]), np.ravel(self.grid_points[1,:,:]), 
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
+
+        
         
 
         self.tag_detections = np.array([])
@@ -200,12 +202,13 @@ class Camera():
         """
         self.GridFrame = self.VideoFrame.copy()
         
-        grid_camera_coord = np.dot(self.extrinsic_matrix, self.grid_points2)
-        z_camera_coord = grid_camera_coord[2,:]
-        grid_pixel_coord = np.dot(self.intrinsic_matrix, grid_camera_coord[0:3,:])
-        #print(grid_pixel_coord)
-        #for i in range(np.shape(grid_pixel_coord)[1]):
-        #    cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 10, (255,0,0), -1)
+        if self.camera_calibrated:
+            grid_camera_coord = np.dot(self.extrinsic_matrix, self.grid_points2)
+            z_camera_coord = grid_camera_coord[2,:]
+            grid_pixel_coord = np.dot(self.intrinsic_matrix, grid_camera_coord[0:3,:])
+            print(grid_pixel_coord.shape)
+            for i in range(np.shape(grid_pixel_coord)[1]):
+                cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
 
         
 
