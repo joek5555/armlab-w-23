@@ -13,7 +13,7 @@ You will upgrade some functions and also implement others according to the comme
 """
 import numpy as np
 from functools import partial
-from kinematics import FK_dh, FK_pox, get_pose_from_T
+from kinematics import FK_dh, FK_pox, get_pose_from_T, to_s_matrix, get_euler_angles_from_T
 import time
 import csv
 from builtins import super
@@ -29,6 +29,7 @@ TODO: Implement the missing functions and add anything you need to support them
 """ Radians to/from  Degrees conversions """
 D2R = np.pi / 180.0
 R2D = 180.0 / np.pi
+
 
 
 def _ensure_initialized(func):
@@ -82,8 +83,12 @@ class RXArm(InterbotixRobot):
         if (dh_config_file is not None):
             self.dh_params = RXArm.parse_dh_param_file(dh_config_file)
         #POX params
-        self.M_matrix = []
+        self.M_matrix = np.array([(1, 0, 0, 0),
+                  (0, 1, 0, 424.15),
+                  (0, 0, 1, 303.91),
+                  (0, 0, 0, 1)])
         self.S_list = []
+
 
     def initialize(self):
         """!
@@ -189,7 +194,28 @@ class RXArm(InterbotixRobot):
 
         @return     The EE pose as [x, y, z, phi] or as needed.
         """
-        return [0, 0, 0, 0]
+        w1 = np.array([0, 0, 1])
+        v1 = np.array([0, 0, 0])
+        w2 = np.array([-1, 0, 0])
+        v2 = np.array([0, -103.91, 0])
+        w3 = np.array([1, 0, 0])
+        v3 = np.array([0, 303.91, -50])
+        w4 = np.array([1, 0, 0])
+        v4 = np.array([0, 303.91, -250])
+        w5 = np.array([0, 1, 0])
+        v5 = np.array([-303.91, 0, 0])
+        self.S_list.append(to_s_matrix(w1,v1))
+        self.S_list.append(to_s_matrix(w2,v2))
+        self.S_list.append(to_s_matrix(w3,v3))
+        self.S_list.append(to_s_matrix(w4,v4))
+        self.S_list.append(to_s_matrix(w5,v5))
+        joint_angles = self.get_positions()
+        Tq = FK_pox(joint_angles,self.M_matrix,self.S_list)
+        pos = get_pose_from_T(Tq)
+        angles = get_euler_angles_from_T(Tq)
+        
+        return [pos[0], pos[1], pos[2], angles[0], angles[1], angles[2]]
+
 
     @_ensure_initialized
     def get_wrist_pose(self):
