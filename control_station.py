@@ -238,7 +238,7 @@ class Gui(QMainWindow):
 
         pt = mouse_event.pos()
         if self.camera.DepthFrameRaw.any() != 0:
-            z = self.camera.DepthFrameRaw[pt.y()][pt.x()]
+            z = self.camera.DepthFrameRaw[pt.y()][pt.x()] - self.camera.z_offset
             
             image_coord = np.array([[pt.x()], [pt.y()], [1]])
             camera_coord = np.ones([4,1])
