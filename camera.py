@@ -34,9 +34,11 @@ class Camera():
         self.DepthFrameRGB = np.array([])
 
         # mouse clicks & calibration variables
-        self.cameraCalibrated = False
-        #self.intrinsic_matrix = np.eye(3)
-        self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)])
+        self.camera_calibrated = False
+        self.intrinsic_matrix = np.eye(3)
+        #self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
+        #self.intrinsic_matrix = np.array([(905.8, 0, 668.8), (0, 911.7, 376.8), (0, 0, 1)]) # calibrated
+        #self.intrinsic_matrix = np.array([(913.4, 0, 673.0), (0, 917.4, 377.7), (0, 0, 1)]) # calibrated
         self.extrinsic_matrix = np.eye(4)
         self.last_click = np.array([0, 0])
         self.new_click = False
@@ -50,6 +52,10 @@ class Camera():
         
         self.grid_points2 = np.array([np.ravel(self.grid_points[0,:,:]), np.ravel(self.grid_points[1,:,:]), 
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
+
+        self.z_offset = 13 # amount to add to all z measurements
+
+        
         
 
         self.tag_detections = np.array([])
@@ -200,12 +206,34 @@ class Camera():
         """
         self.GridFrame = self.VideoFrame.copy()
         
-        grid_camera_coord = np.dot(self.extrinsic_matrix, self.grid_points2)
-        z_camera_coord = grid_camera_coord[2,:]
-        grid_pixel_coord = np.dot(self.intrinsic_matrix, grid_camera_coord[0:3,:])
-        #print(grid_pixel_coord)
-        #for i in range(np.shape(grid_pixel_coord)[1]):
-        #    cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 10, (255,0,0), -1)
+        if self.camera_calibrated:
+
+            #edge_points_world = np.array([[450,-125, -10],[-450,-125, -10],[-450, 425, 10], [450, 425, 10]])
+            edge_points_world = np.array([[250,-25, -10],[-250,-25, -10],[-250, 275, 10], [250, 275, 10]])
+            edge_points_pixel = np.zeros((4,2))
+            for i in range(4):
+                world_point = edge_points_world[i,:]
+                
+                world_point = np.append(world_point, 1)
+                camera_point = np.dot(self.extrinsic_matrix, world_point)
+                pixel_point = np.dot(self.intrinsic_matrix ,np.delete(camera_point, -1))
+                z = self.DepthFrameRaw[world_point[1]][world_point[0]]
+                edge_points_pixel[i,0] =  pixel_point[0] / z
+                edge_points_pixel[i,1] =  pixel_point[1] / z
+
+            remap_points_pixel = np.array([[890,510],[390,510],[390, 210], [890, 210]])
+
+            H = cv2.findHomography(edge_points_pixel,remap_points_pixel)[0]
+            #self.GridFrame = cv2.warpPerspective(self.GridFrame, H, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
+            #H = cv2.findAffine(edge_points_pixel[],remap_points_pixel)[0]
+            
+
+            grid_camera_coord = np.dot(self.extrinsic_matrix, self.grid_points2)
+            z_camera_coord = grid_camera_coord[2,:]
+            grid_pixel_coord = np.dot(self.intrinsic_matrix, grid_camera_coord[0:3,:])
+            #print(grid_pixel_coord.shape)
+            for i in range(np.shape(grid_pixel_coord)[1]):
+                cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
 
         
 
