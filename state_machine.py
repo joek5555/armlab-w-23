@@ -43,7 +43,7 @@ class StateMachine():
             [0.0,             0.0,     0.0,      0.0,     0.0]]
 
         self.taught_waypoints = []
-        self.tag_camera_pose = [0,0,0,0]
+        self.tag_camera_pose = [0] * self.camera.num_apriltags
         self.tag_camera_measurements = 0
 
     def set_next_state(self, state):
@@ -144,12 +144,13 @@ class StateMachine():
         #self.tag_camera_pose = []
         self.tag_camera_measurements += 1
         
-        for i in range(4):
+        for i in range(self.camera.num_apriltags):
             if len(data.detections[i].id) == 1:
                 position = np.array([data.detections[i].pose.pose.pose.position.x, 
                                      data.detections[i].pose.pose.pose.position.y, 
                                      data.detections[i].pose.pose.pose.position.z])
-                self.tag_camera_pose[data.detections[i].id[0] - 1] += position
+                index = self.camera.apriltag_id_lookup[data.detections[i].id[0]].item()
+                self.tag_camera_pose[index] += position
                 #self.tag_camera_pose.insert(data.detections[i].id[0] - 1, np.array([data.detections[i].pose.pose.pose.position.x, 
                                                                               #data.detections[i].pose.pose.pose.position.y, 
                                                                               #data.detections[i].pose.pose.pose.position.z]))   
@@ -178,7 +179,7 @@ class StateMachine():
             print("Calibration failed, no tag poses received")
             self.calibration_message = "Calibration failed, no tag poses received"
         else:
-            for i in range(4):
+            for i in range(self.camera.num_apriltags): # averaging
                 self.tag_camera_pose[i] /= self.tag_camera_measurements
             
             print("final tag poses")
@@ -187,9 +188,9 @@ class StateMachine():
 
             #CV2.solvepnp
             
-            model_points = np.array([(-0.25, -0.025, 0), (0.25, -0.025, 0), (0.25, 0.275,0),(-0.25, 0.275, 0)])
-            image_points = np.zeros((4,2))
-            for i in range(4):
+            model_points = self.camera.apriltag_locations
+            image_points = np.zeros((self.camera.num_apriltags,2))
+            for i in range(self.camera.num_apriltags):
                 #cramera_pos = self.tag_camera_pose[i].transpose()
                 camera_pos = self.tag_camera_pose[i].reshape((3,1))
                 image_pos = np.dot(self.camera.intrinsic_matrix, camera_pos)/camera_pos[2]

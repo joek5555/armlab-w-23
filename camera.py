@@ -57,7 +57,10 @@ class Camera():
 
         
         
-
+        self.num_apriltags = 7
+        self.apriltag_locations =  np.array([(-0.25, -0.025, 0), (0.25, -0.025, 0), (0.25, 0.275,0),(-0.25, 0.275, 0), (-0.375,-0.1,0.098), (0.025,0.4, 0.243), (0.375,-0.1,0.153)])
+        self.apriltag_id_lookup = np.array([-1 , 0, 1, 2, 3, 4, -1, 5, 6]) # index of this array is id number, element is id position in final array
+                                                                           # any index with -1 means there is no tag with that id
         self.tag_detections = np.array([])
         self.tag_locations = [[-250, -25], [250, -25], [250, 275]]
         """ block info """
