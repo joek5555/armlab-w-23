@@ -238,19 +238,15 @@ class Gui(QMainWindow):
 
         pt = mouse_event.pos()
         if self.camera.DepthFrameRaw.any() != 0:
-            z = self.camera.DepthFrameRaw[pt.y()][pt.x()] - self.camera.z_offset
             
-            image_coord = np.array([[pt.x()], [pt.y()], [1]])
-            camera_coord = np.ones([4,1])
-            camera_coord[0:3,:] = np.dot((z),np.dot(np.linalg.inv(self.camera.intrinsic_matrix), image_coord))
-            
-            world_coord = np.dot(np.linalg.inv(self.camera.extrinsic_matrix), camera_coord)
-            
+            pixel_coord = np.array([[pt.x()], [pt.y()], [1]])
+            z = self.camera.DepthFrameRaw[pixel_coord[1,0]][pixel_coord[0,0]] + self.camera.z_offset
+            world_coord = self.camera.pixel2World(pixel_coord)
 
             self.ui.rdoutMousePixels.setText("(%.0f,%.0f,%.0f)" %
                                              (pt.x(), pt.y(), z))
             self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)"%
-                                            (world_coord[0,0], world_coord[1,0], world_coord[2,0] + self.camera.z_m * world_coord[1,0] + self.camera.z_b))
+                                            (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
 
     def calibrateMousePress(self, mouse_event):
         """!
@@ -263,7 +259,32 @@ class Gui(QMainWindow):
         self.camera.last_click[0] = pt.x()
         self.camera.last_click[1] = pt.y()
         self.camera.new_click = True
-        # print(self.camera.last_click)
+
+        # pixel to world computation
+        pixel_coord = np.array([[self.camera.last_click[0]], [self.camera.last_click[1]], [1]])
+            
+        world_coord = self.camera.pixel2World(pixel_coord)
+        if self.camera.camera_calibrated:
+            if self.sm.current_state == "idle":
+                if self.sm.picked_block == False:
+                    self.ui.pick_place_pose.setText("Picking at (%.0f,%.0f,%.0f)" %
+                                                    (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
+                    self.ui.pick_place_message.setText("Wait to finish moving")
+                    # self.sm.pick()
+                    self.ui.pick_place_message.setText("Please select a place to place")
+                else:
+                    self.ui.pick_place_pose.setText("Placing at (%.0f,%.0f,%.0f)" %
+                                                    (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
+                    self.ui.pick_place_message.setText("Wait to finish moving")
+                    # self.sm.pick()
+                    self.ui.pick_place_message.setText("Please select a place to pick")
+            else:
+                self.ui.pick_place_pose.setText("Failed to move to (%.0f,%.0f,%.0f)" %
+                                                (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
+                self.ui.pick_place_message.setText("Robot is not idle")
+        else:
+            self.ui.pick_place_message.setText("Please calibrate camera first")
+        
 
     def initRxarm(self):
         """!

@@ -45,6 +45,7 @@ class StateMachine():
         self.taught_waypoints = []
         self.tag_camera_pose = [0,0,0,0]
         self.tag_camera_measurements = 0
+        self.picked_block = False
 
     def set_next_state(self, state):
         """!
