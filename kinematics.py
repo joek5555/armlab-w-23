@@ -8,6 +8,13 @@ There are some functions to start with, you may need to implement a few more
 import numpy as np
 # expm is a matrix exponential function
 from scipy.linalg import expm
+from scipy.spatial.transform import Rotation
+import cv2
+
+import math
+
+
+
 
 
 def clamp(angle):
@@ -73,8 +80,38 @@ def get_euler_angles_from_T(T):
     @param      T     transformation matrix
 
     @return     The euler angles from T.
+
     """
-    pass
+    xyz = True
+    if xyz:
+        sy = math.sqrt(T[0,0]*T[0,0]+T[1,0]*T[1,0])
+        singular = sy < 1e-6
+        
+        if not singular:
+            x = math.atan2(T[2,1], T[2,2])
+            y = math.atan2(-T[2,0],sy)
+            z = math.atan2(T[1,0],T[0,0])
+        else:
+            x = math.atan2(-T[1,2], T[1,1])
+            y = math.atan2(-T[2,0], sy)
+            z = 0
+
+        return(np.array([x,y,z]))
+    else:
+
+
+        #Rot_matrix = Rotation.from_matrix([T[0:3,0:3]])
+        #Rot_matrix = Rotation.from_matrix([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
+        #Rot_matrix = T[0:3,0:3]
+        Rot_vector = cv2.Rodrigues(T[0:3,0:3])
+    
+        Rot_matrix = Rotation.from_rotvec([Rot_vector[0,0], Rot_vector[1,0], Rot_vector[2,0]])
+    
+
+        Rot_results = Rot_matrix.as_euler('zyz', degrees = True)
+
+        return Rot_results
+        
 
 
 def get_pose_from_T(T):
@@ -87,7 +124,11 @@ def get_pose_from_T(T):
 
     @return     The pose vector from T.
     """
-    pass
+    x = T[0,3]
+    y = T[1,3]
+    z = T[2,3]
+    pos = np.array([x, y, z])
+    return pos
 
 
 def FK_pox(joint_angles, m_mat, s_lst):
@@ -103,7 +144,12 @@ def FK_pox(joint_angles, m_mat, s_lst):
 
     @return     a 4x4 homogeneous matrix representing the pose of the desired link
     """
-    pass
+    Tq = np.identity(4)
+    for i in range(5):
+        e = expm(s_lst[i]*joint_angles[i])
+        Tq = np.dot(Tq,e)
+    Tq = np.dot(Tq,m_mat)
+    return Tq    
 
 
 def to_s_matrix(w, v):
@@ -118,7 +164,18 @@ def to_s_matrix(w, v):
 
     @return     { description_of_the_return_value }
     """
-    pass
+    w1 = w[0]
+    w2 = w[1]
+    w3 = w[2]
+    v1 = v[0]
+    v2 = v[1]
+    v3 = v[2]
+    s = np.array([  (0, -w3, w2, v1), 
+                    (w3, 0, -w1, v2),
+                    (-w2, w1, 0, v3),
+                    (0, 0, 0, 0)])
+
+    return s
 
 
 def IK_geometric(dh_params, pose):
