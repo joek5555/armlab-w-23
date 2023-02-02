@@ -527,6 +527,34 @@ class Ui_MainWindow(object):
         self.horizontalLayout_14.addWidget(self.rdoutStatus)
 
         # jk add
+        self.pick_place_pose = QtGui.QLabel(self.centralwidget) 
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.pick_place_pose.setFont(font)
+        self.pick_place_pose.setTextFormat(QtCore.Qt.AutoText)
+        self.pick_place_pose.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.pick_place_pose.setWordWrap(True)
+        self.pick_place_pose.setObjectName(_fromUtf8("pick_place_pose"))
+        #self.horizontalLayout_14.addWidget(self.pick_place_pose)
+        self.verticalLayout_5.addWidget(self.pick_place_pose)
+        # jk add
+
+        # jk add
+        self.pick_place_message = QtGui.QLabel(self.centralwidget) 
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.pick_place_message.setFont(font)
+        self.pick_place_message.setTextFormat(QtCore.Qt.AutoText)
+        self.pick_place_message.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
+        self.pick_place_message.setWordWrap(True)
+        self.pick_place_message.setObjectName(_fromUtf8("pick_place_message"))
+        #self.horizontalLayout_14.addWidget(self.pick_place_message)
+        self.verticalLayout_5.addWidget(self.pick_place_message)
+        # jk add
+
+        # jk add
         self.calibration_status = QtGui.QLabel(self.centralwidget) 
         font = QtGui.QFont()
         font.setBold(True)
@@ -539,6 +567,8 @@ class Ui_MainWindow(object):
         #self.horizontalLayout_14.addWidget(self.calibration_status)
         self.horizontalLayout_2.addWidget(self.calibration_status)
         # jk add
+
+        
         
         self.verticalLayout_4.addLayout(self.horizontalLayout_14)
         self.horizontalLayout_13.addLayout(self.verticalLayout_4)
@@ -709,6 +739,8 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "Status:", None))
         self.rdoutStatus.setText(_translate("MainWindow", "Waiting for Inputs", None))
         self.calibration_status.setText(_translate("MainWindow", "Camera Not Calibrated", None)) # jk added
+        self.pick_place_pose.setText(_translate("MainWindow", "Pick and Place", None)) # jk added
+        self.pick_place_message.setText(_translate("MainWindow", "Please calibrate camera first", None)) # jk added
         self.btn_estop.setText(_translate("MainWindow", "EMERGENCY STOP", None))
         self.btn_init_arm.setText(_translate("MainWindow", "INITIALIZE ARM", None))
         self.btn_sleep_arm.setText(_translate("MainWindow", "SLEEP ARM", None))

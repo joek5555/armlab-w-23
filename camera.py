@@ -53,7 +53,9 @@ class Camera():
         self.grid_points2 = np.array([np.ravel(self.grid_points[0,:,:]), np.ravel(self.grid_points[1,:,:]), 
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
 
-        self.z_offset = 13 # amount to add to all z measurements
+        self.z_offset = -13  # amount to add to all z measurements before calibration
+        self.z_b = 6.75 # z = my + b, where y is y world value
+        self.z_m = -0.05
 
         
         
@@ -63,6 +65,17 @@ class Camera():
         """ block info """
         self.block_contours = np.array([])
         self.block_detections = np.array([])
+
+
+    def pixel2World(self, pixel_coord):
+
+        z = self.DepthFrameRaw[pixel_coord[1,0]][pixel_coord[0,0]] + self.z_offset
+        camera_coord = np.ones([4,1])
+        camera_coord[0:3,:] = np.dot((z),np.dot(np.linalg.inv(self.intrinsic_matrix), pixel_coord))  
+        world_coord = np.dot(np.linalg.inv(self.extrinsic_matrix), camera_coord)
+        world_coord[2,0] = world_coord[2,0]  + self.z_m * world_coord[1,0] + self.z_b
+        return world_coord
+
 
     def processVideoFrame(self):
         """!
@@ -217,7 +230,7 @@ class Camera():
                 world_point = np.append(world_point, 1)
                 camera_point = np.dot(self.extrinsic_matrix, world_point)
                 pixel_point = np.dot(self.intrinsic_matrix ,np.delete(camera_point, -1))
-                z = self.DepthFrameRaw[world_point[1]][world_point[0]]
+                z = self.DepthFrameRaw[world_point[1]][world_point[0]] + self.z_offset
                 edge_points_pixel[i,0] =  pixel_point[0] / z
                 edge_points_pixel[i,1] =  pixel_point[1] / z
 
