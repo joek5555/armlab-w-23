@@ -170,7 +170,7 @@ class StateMachine():
         #rospy.init_node('april_tag_listener', anonymous=True)
         global tag_detections_sub
         tag_detections_sub = rospy.Subscriber("tag_detections", AprilTagDetectionArray, self.tag_detections_callback)
-        rospy.sleep(1)
+        rospy.sleep(5)
         tag_detections_sub.unregister()
         rospy.sleep(0.1)
 

@@ -53,7 +53,9 @@ class Camera():
         self.grid_points2 = np.array([np.ravel(self.grid_points[0,:,:]), np.ravel(self.grid_points[1,:,:]), 
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
 
-        self.z_offset = 13 # amount to add to all z measurements
+        self.z_offset = 13
+        self.z_b = 9.75 # amount to add to all z measurements
+        self.z_m = -0.05
 
         
         
