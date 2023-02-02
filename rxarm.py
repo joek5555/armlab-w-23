@@ -83,10 +83,16 @@ class RXArm(InterbotixRobot):
         if (dh_config_file is not None):
             self.dh_params = RXArm.parse_dh_param_file(dh_config_file)
         #POX params
+        """ old M Matrix
         self.M_matrix = np.array([(1, 0, 0, 0),
                   (0, 1, 0, 424.15),
                   (0, 0, 1, 303.91),
                   (0, 0, 0, 1)])
+        """
+        self.M_matrix = np.array([(0, -1, 0, 0),
+                                  (1, 0, 0, 424.15),
+                                  (0, 0, 1, 303.91),
+                                  (0, 0, 0, 1)])
         self.S_list = []
 
 
