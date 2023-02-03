@@ -7,6 +7,7 @@ import numpy as np
 import rospy
 from apriltag_ros.msg import AprilTagDetectionArray # jk edit
 import cv2
+import kinematics
 #from rxarm import (set_positions)
 
 class StateMachine():
@@ -323,10 +324,29 @@ class StateMachine():
                     print()
                     rospy.sleep(0.1)
 
+        self.next_state = "idle"
 
-            
-            
+    def pick(self, xyz_coord):
+        self.current_state = "pick"
+        
+        xyz_coord[2,0] = xyz_coord[2,0] + 400
 
+        world_coord = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0], np.pi/2, np.pi/2,  0])
+
+        print("desired pose")
+        print(world_coord)
+        joint_angles = kinematics.IK_geometric(world_coord)
+        desired_joint_angles = kinematics.choose_joint_combination(joint_angles)
+        print("Desired Joint angles:")
+        print(desired_joint_angles*180/np.pi)
+        if desired_joint_angles[1] == -1000:
+            print("error: no valid joint combination")
+        else:
+            self.rxarm.set_positions(desired_joint_angles)
+            rospy.sleep(3)
+
+        #print("Taught waypoint")
+        #print(self.taught_waypoints[-1])
 
         self.next_state = "idle"
     

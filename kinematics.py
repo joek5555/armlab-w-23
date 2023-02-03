@@ -16,7 +16,7 @@ import math
 
 
 
-
+r2d = 180/np.pi
 def clamp(angle):
     """!
     @brief      Clamp angles between (-pi, pi]
@@ -178,16 +178,159 @@ def to_s_matrix(w, v):
     return s
 
 
-def IK_geometric(dh_params, pose):
-    """!
-    @brief      Get all possible joint configs that produce the pose.
+def R1(th):
+    R = np.array([(1, 0, 0), (0, np.cos(th), -np.sin(th)), (0, np.sin(th), np.cos(th))],dtype=object)
+    return R
 
-                TODO: Convert a desired end-effector pose vector as np.array to joint angles
+def R2(th):
+    R = np.array([(np.cos(th), 0, np.sin(th)), (0, 1, 0), (-np.sin(th),0 , np.cos(th))],dtype=object)
+    return R
 
-    @param      dh_params  The dh parameters
-    @param      pose       The desired pose vector as np.array 
+def R3(th):
+    R = np.array([(np.cos(th), -np.sin(th), 0), (np.sin(th), np.cos(th), 0), (0, 0, 1)],dtype=object)
+    return R
 
-    @return     All four possible joint configurations in a numpy array 4x4 where each row is one possible joint
-                configuration
-    """
-    pass
+
+def IK_geometric(pose):
+    #data of arm in mm
+    l1 = 103.91
+    l2_1 = 200
+    l2_2 = 50
+    l3 = 200
+    l4 = 65
+    l5 = 66 + 43.15
+
+    #IK
+    x = pose[0]
+    y = pose[1]
+    z = pose[2]
+    p1 = pose[3]
+    p2 = pose[4]
+    p3 = pose[5]
+    #find zyz Rotation Matrix
+    cp1 = np.cos(p1)
+    sp1 = np.sin(p1)
+    cp2 = np.cos(p2)
+    sp2 = np.sin(p2)
+    cp3 = np.cos(p3)
+    sp3 = np.sin(p3)
+    r11 = cp1*cp2*cp3 - sp1*sp3
+    r12 = -cp1*cp2*sp3 - sp1*cp3 
+    r13 = cp1*sp2
+    r21 = sp1*cp2*cp3 + cp1*sp3
+    r22 = -sp1*cp2*sp3 + cp1*cp3
+    r23 = sp1*sp2
+    r31 = -sp2*cp3
+    r32 = sp2*sp3
+    r33 = cp2
+    R = np.array([(r11, r12, r13),(r21, r22, r23),(r31, r32, r33)],dtype=object)
+    #print(R)
+    #find xc yc zc 
+    #xc = x - (l4+l5)*r13
+    #yc = y - (l4+l5)*r23 
+    #zc = z - (l4+l5)*r33
+
+    xc = x
+    yc = y
+    zc = z
+    #find j1 j2 j3
+    x0 = np.sqrt(xc*xc + yc*yc)
+    y0 = zc - l1
+
+    #distance_to_point = np.sqrt(x0* x0 + y0 * y0)
+    #if distance_to_point > 
+
+    l2 = np.sqrt(l2_1*l2_1 + l2_2*l2_2)
+    j2_ex = np.arctan2(l2_2,l2_1)
+    j1_1 = -np.arctan2(xc,yc)
+    j1_2 = j1_1 + np.pi
+    #print((2*l2*l3))
+    #print(x0*x0 + y0*y0 - l2*l2 -l3*l3)
+    j3_1 = np.arccos([(x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3)])
+    j3_2 = -j3_1
+   
+    j2_1 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_1), l2 + l3*np.cos(j3_1))
+    j2_2 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_2), l2 + l3*np.cos(j3_2))
+    j2_1 = np.pi/2 - j2_ex - j2_1
+    j2_2 = np.pi/2 - j2_ex - j2_2
+    j3_1 += np.pi/2 - j2_ex
+    j3_2 += np.pi/2 - j2_ex
+    #find R0_3
+    #R0_1
+    R0_1 = R3(j1_1)
+    #R1_2
+    R1_2_1 = np.dot(R2(-np.pi/2),R3(j2_1))
+    R1_2_2 = np.dot(R2(-np.pi/2),R3(j2_2))
+    #R2_3
+    R2_3_1 = np.dot(R2(np.pi), R3(j3_1))
+    R2_3_2 = np.dot(R2(np.pi), R3(j3_2))
+    #R0_3 
+    R0_3_1 = np.dot(R0_1, np.dot(R1_2_1, R2_3_1))
+    R0_3_2 = np.dot(R0_1, np.dot(R1_2_2, R2_3_2))
+    #print(R0_3_2)
+
+    #find R3_5
+    R3_5_1 = np.dot(np.transpose(R0_3_1), R)
+    R3_5_2 = np.dot(np.transpose(R0_3_2), R)
+    #solve j4 and j5
+    cj4_1 = R3_5_1[1, 2]
+    sj4_1 = - R3_5_1[0, 2]
+    cj5_1 = - R3_5_1[2, 1]
+    sj5_1 = - R3_5_1[2, 0]
+    j4_1 = np.arctan2(sj4_1,cj4_1)
+    j5_1 = np.arctan2(sj5_1,cj5_1)
+
+    cj4_2 = R3_5_2[1, 2]
+    sj4_2 = - R3_5_2[0, 2]
+    cj5_2 = - R3_5_2[2, 1]
+    sj5_2 = - R3_5_2[2, 0]
+    j4_2 = np.arctan2(sj4_2,cj4_2)
+    j5_2 = np.arctan2(sj5_2,cj5_2)
+    print("First Combination: ")
+    print(j1_1*r2d, " ", j2_1*r2d, " ", j3_1*r2d, " ", j4_1*r2d, " ", j5_1*r2d)
+    print("Second Combination: ")
+    print(j1_1*r2d, " ", j2_2*r2d, " ", j3_2*r2d, " ", j4_2*r2d, " ", j5_2*r2d)
+    #print("Third Combination: ")
+    #print(j1_2*r2d, " ", j2_1*r2d, " ", j3_1*r2d, " ", j4_1*r2d, " ", j5_1*r2d)
+    #print("Fouth Combination: ")
+    #print(j1_2*r2d, " ", j2_2*r2d, " ", j3_2*r2d, " ", j4_2*r2d, " ", j5_2*r2d)
+
+    #return np.array([(j1_1, j2_1, j3_1, j4_1, j5_1), (j1_1, j2_2, j3_2, j4_2, j5_2), (j1_2, j2_1, j3_1, j4_1, j5_1), (j1_2, j2_2, j3_2, j4_2, j5_2)])
+    return np.array([(j1_1, j2_1, j3_1, j4_1, j5_1), (j1_1, j2_2, j3_2, j4_2, j5_2), (10000, 10000, 10000, 10000, 10000), (10000, 10000, 10000, 10000, 10000)])
+
+
+#pose = np.array([0, 50+200+174.15, 200+103.91, np.pi/2, np.pi/2, 0])
+#IK_geometric(pose)
+
+
+def choose_joint_combination(joint_combinations):
+    valid_rows = np.ones(4) # valid is 1, invalid is 0
+    valid_combinations = []
+
+    max_joint_angles = np.array([2*np.pi, 1.7089, 1.7702, 1.8193, 2.8240])
+    min_joint_angles = np.array([-2*np.pi,-1.4849, -1.6183, -2.1368, -2.7535])
+
+    for i in range(4):
+        for j in range(5):
+            if np.isnan(joint_combinations[i,j]):
+                valid_rows[i] = 0
+                break
+            elif joint_combinations[i,j] > max_joint_angles[j] or joint_combinations[i,j] < min_joint_angles[j]:
+                valid_rows[i] = 0
+                break
+        if valid_rows[i]:
+            valid_combinations.append(joint_combinations[i,:])
+    
+    if len(valid_combinations) < 1:
+        return np.array([-1000, -1000, -1000, -1000, -1000])
+    elif len(valid_combinations) == 1:
+        return valid_combinations[0]
+    else:
+        desired_combination = valid_combinations[0]
+        for i in range(1, len(valid_combinations)):
+            if valid_combinations[i][2] < desired_combination[2]: # pick the combination with the smalled j3 angle
+                desired_combination = valid_combinations[i]
+        return desired_combination
+            
+
+    
