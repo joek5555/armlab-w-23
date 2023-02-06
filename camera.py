@@ -27,6 +27,7 @@ class Camera():
         """
         self.VideoFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.GridFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
+        self.DetectionFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.TagImageFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.DepthFrameRaw = np.zeros((720, 1280)).astype(np.uint16)
         """ Extra arrays for colormaping the depth image"""
@@ -66,6 +67,19 @@ class Camera():
         self.block_contours = np.array([])
         self.block_detections = np.array([])
 
+        self.red_thresh = np.array([[167,4], [111,255], [41,255]], dtype= np.float32)
+        self.orange_thresh = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
+        self.yellow_thresh = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
+        self.green_thresh = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
+        self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
+        self.purple_thresh = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
+        self.erosion_kernel_size = 1
+        self.erosion_kernel_shape = 0 # 0 is rectangle
+        self.dilation_kernel_size = 1
+        self.dilation_kernel_shape = 0 # 0 is rectangle
+        self.morphological = np.array([self.erosion_kernel_size, self.erosion_kernel_shape, self.dilation_kernel_size, self.dilation_kernel_shape])
+        self.min_pixels_for_rectangle = 10
+        self.contour_constraints = np.array([self.min_pixels_for_rectangle])
 
     def pixel2World(self, pixel_coord):
 
@@ -133,6 +147,21 @@ class Camera():
 
         try:
             frame = cv2.resize(self.GridFrame, (1280, 720))
+            img = QImage(frame, frame.shape[1], frame.shape[0],
+                         QImage.Format_RGB888)
+            return img
+        except:
+            return None
+
+    def convertQtDetectionFrame(self):
+        """!
+        @brief      Converts frame to format suitable for Qt
+
+        @return     QImage
+        """
+
+        try:
+            frame = cv2.resize(self.DetectionFrame, (1280, 720))
             img = QImage(frame, frame.shape[1], frame.shape[0],
                          QImage.Format_RGB888)
             return img
@@ -248,6 +277,9 @@ class Camera():
             for i in range(np.shape(grid_pixel_coord)[1]):
                 cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
 
+    def BlockDetection(self):
+        self.DetectionFrame = self.VideoFrame.copy()
+
         
 
 class ImageListener:
@@ -355,9 +387,10 @@ class VideoThread(QThread):
             tag_frame = self.camera.convertQtTagImageFrame()
             self.camera.projectGridInRGBImage()
             grid_frame = self.camera.convertQtGridFrame()
+            detection_frame = self.camera.convertQtDetectionFrame()
             if ((rgb_frame != None) & (depth_frame != None)):
                 self.updateFrame.emit(
-                    rgb_frame, depth_frame, tag_frame, grid_frame)
+                    rgb_frame, depth_frame, tag_frame, grid_frame, detection_frame)
             time.sleep(0.03)
             if __name__ == '__main__':
                 cv2.imshow(
@@ -369,6 +402,8 @@ class VideoThread(QThread):
                     cv2.cvtColor(self.camera.TagImageFrame, cv2.COLOR_RGB2BGR))
                 cv2.imshow("Grid window",
                     cv2.cvtColor(self.camera.GridFrame, cv2.COLOR_RGB2BGR))
+                cv2.imshow("Detection window",
+                    cv2.cvtColor(self.camera.DetectionFrame, cv2.COLOR_RGB2BGR))
                 cv2.waitKey(3)
                 time.sleep(0.03)
 
