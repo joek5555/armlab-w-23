@@ -282,15 +282,15 @@ class Camera():
     def BlockDetection(self):
         #self.DetectionFrame = self.VideoFrame.copy()
         rgb_image = self.VideoFrame.copy()
-        rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-        hsv_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2HSV)
-        mask, contours, boxes = DetectBlocks(hsv_image, self.blue_thresh, self.morphological_constraints, self.contour_constraints)
-        cv2.drawContours(self.DetectionFrame, contours, -1, (0,0,0) , 1)
+        rgb_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+        hsv_image = cv2.cvtColor(rgb_image_cv, cv2.COLOR_BGR2HSV)
+        mask, contours, boxes = DetectBlocks(hsv_image, self.green_thresh, self.morphological_constraints, self.contour_constraints)
+        cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
         for box in boxes:
-            cv2.drawContours(self.DetectionFrame, [box], 0, (0,255,0) , 3)
+            cv2.drawContours(rgb_image, [box], 0, (0,255,0) , 3)
         #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)
-        mask_image = np.stack((mask, np.zeros_like(mask), np.zeros_like(mask)), axis = 2)
-        self.DetectionFrame = mask_image
+        #mask_image = np.stack((mask, np.zeros_like(mask), np.zeros_like(mask)), axis = 2)
+        self.DetectionFrame = rgb_image
 
 
         
