@@ -58,6 +58,22 @@ class Gui(QMainWindow):
             self.ui.sldrWristA,
             self.ui.sldrWristR,
         ]
+        self.hsv_slider_rdouts = [
+            self.ui.rdoutHlow,
+            self.ui.rdoutHhigh,
+            self.ui.rdoutSlow,
+            self.ui.rdoutShigh,
+            self.ui.rdoutVlow,
+            self.ui.rdoutVhigh,
+        ]
+        self.hsv_sliders = [
+            self.ui.sldrHlow,
+            self.ui.sldrHhigh,
+            self.ui.sldrSlow,
+            self.ui.sldrShigh,
+            self.ui.sldrVlow,
+            self.ui.sldrVhigh,
+        ]
         """Objects Using Other Classes"""
         self.camera = Camera()
         print("Creating rx arm...")
@@ -121,6 +137,10 @@ class Gui(QMainWindow):
         """initalize manual control off"""
         self.ui.SliderFrame.setEnabled(False)
         """Setup Threads"""
+
+        for sldr in self.hsv_sliders:
+            sldr.valueChanged.connect(self.hsvSliderChange)
+        
 
         # State machine
         self.StateMachineThread = StateMachineThread(self.sm)
@@ -209,6 +229,17 @@ class Gui(QMainWindow):
                 [sldr.value() * D2R for sldr in self.joint_sliders])
             # Only send the joints that the rxarm has
             self.rxarm.set_positions(joint_positions[0:self.rxarm.num_joints])
+
+    def hsvSliderChange(self):
+        """!
+
+        """
+        for rdout, sldr in zip(self.hsv_slider_rdouts, self.hsv_sliders):
+            rdout.setText(str(sldr.value()))
+        self.camera.blue_thresh = np.array([[self.hsv_sliders[0].value(), self.hsv_sliders[1].value()], [self.hsv_sliders[2].value(), self.hsv_sliders[3].value()], [self.hsv_sliders[4].value(), self.hsv_sliders[5].value()]])
+        print(self.camera.blue_thresh)
+
+
 
     def directControlChk(self, state):
         """!

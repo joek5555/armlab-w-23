@@ -14,6 +14,7 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from apriltag_ros.msg import *
 from cv_bridge import CvBridge, CvBridgeError
+from block_detection import DetectBlocks
 
 
 class Camera():
@@ -71,13 +72,14 @@ class Camera():
         self.orange_thresh = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
         self.yellow_thresh = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
         self.green_thresh = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
-        self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
+        #self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
+        self.blue_thresh = np.array([[90, 125], [50, 255], [35,255]], dtype= np.float32)
         self.purple_thresh = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
         self.erosion_kernel_size = 1
         self.erosion_kernel_shape = 0 # 0 is rectangle
         self.dilation_kernel_size = 1
         self.dilation_kernel_shape = 0 # 0 is rectangle
-        self.morphological = np.array([self.erosion_kernel_size, self.erosion_kernel_shape, self.dilation_kernel_size, self.dilation_kernel_shape])
+        self.morphological_constraints = np.array([self.erosion_kernel_size, self.erosion_kernel_shape, self.dilation_kernel_size, self.dilation_kernel_shape])
         self.min_pixels_for_rectangle = 10
         self.contour_constraints = np.array([self.min_pixels_for_rectangle])
 
@@ -278,7 +280,18 @@ class Camera():
                 cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
 
     def BlockDetection(self):
-        self.DetectionFrame = self.VideoFrame.copy()
+        #self.DetectionFrame = self.VideoFrame.copy()
+        rgb_image = self.VideoFrame.copy()
+        rgb_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+        hsv_image = cv2.cvtColor(rgb_image, cv2.COLOR_BGR2HSV)
+        mask, contours, boxes = DetectBlocks(hsv_image, self.blue_thresh, self.morphological_constraints, self.contour_constraints)
+        cv2.drawContours(self.DetectionFrame, contours, -1, (0,0,0) , 1)
+        for box in boxes:
+            cv2.drawContours(self.DetectionFrame, [box], 0, (0,255,0) , 3)
+        #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)
+        mask_image = np.stack((mask, np.zeros_like(mask), np.zeros_like(mask)), axis = 2)
+        self.DetectionFrame = mask_image
+
 
         
 
@@ -356,7 +369,7 @@ class DepthListener:
 
 
 class VideoThread(QThread):
-    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
+    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage, QImage)
 
     def __init__(self, camera, parent=None):
         QThread.__init__(self, parent=parent)
@@ -387,6 +400,7 @@ class VideoThread(QThread):
             tag_frame = self.camera.convertQtTagImageFrame()
             self.camera.projectGridInRGBImage()
             grid_frame = self.camera.convertQtGridFrame()
+            self.camera.BlockDetection()
             detection_frame = self.camera.convertQtDetectionFrame()
             if ((rgb_frame != None) & (depth_frame != None)):
                 self.updateFrame.emit(

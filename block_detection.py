@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 
-def threshold_image(hsv_image, thresh):
+def ThresholdImage(hsv_image, thresh):
     """
     Create a binary image using a hsv threshold
     """
@@ -48,7 +48,7 @@ def FindContours(image, contour_constraints):
     """
     find the contours and boxes within the image
     """
-    contours, hierarchy = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     
     #cv2.drawContours(rgb_image_copy, contours, -1, (0,0,0) , 1)
     boxes = []
@@ -61,3 +61,14 @@ def FindContours(image, contour_constraints):
             #cv2.drawContours(rgb_image_copy, [box], 0, (0,255,0) , 3)
 
     return contours, boxes
+
+
+def DetectBlocks(image, threshold, morphological_constraints, contour_constraints):
+    """
+    """
+    image1 = ThresholdImage(image, threshold)
+    image2 = Morphological(image1, morphological_constraints)
+    
+    contours, boxes = FindContours(image2, contour_constraints)
+    return image1, contours, boxes
+    
