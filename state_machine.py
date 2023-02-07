@@ -329,24 +329,26 @@ class StateMachine():
     def pick(self, xyz_coord):
         self.current_state = "pick"
         
-        xyz_coord[2,0] = xyz_coord[2,0] + 400
+        xyz_coord[2,0] = xyz_coord[2,0] + 20
 
-        world_coord = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0], np.pi/2, np.pi/2,  0])
+        world_coord = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0], np.pi/2, np.pi,  0])
 
         print("desired pose")
         print(world_coord)
         joint_angles = kinematics.IK_geometric(world_coord)
         desired_joint_angles = kinematics.choose_joint_combination(joint_angles)
         print("Desired Joint angles:")
-        print(desired_joint_angles*180/np.pi)
+        print(desired_joint_angles)
         if desired_joint_angles[1] == -1000:
             print("error: no valid joint combination")
         else:
             self.rxarm.set_positions(desired_joint_angles)
-            rospy.sleep(3)
+            rospy.sleep(8)
 
         #print("Taught waypoint")
         #print(self.taught_waypoints[-1])
+        print("current joint angles")
+        print(self.rxarm.get_positions())
 
         self.next_state = "idle"
     

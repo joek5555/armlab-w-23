@@ -196,6 +196,8 @@ def IK_geometric(pose):
     l1 = 103.91
     l2_1 = 200
     l2_2 = 50
+    l2 = np.sqrt(l2_1*l2_1 + l2_2*l2_2)
+    j2_ex = np.arctan2(l2_2,l2_1)
     l3 = 200
     l4 = 65
     l5 = 66 + 43.15
@@ -226,79 +228,137 @@ def IK_geometric(pose):
     R = np.array([(r11, r12, r13),(r21, r22, r23),(r31, r32, r33)],dtype=object)
     #print(R)
     #find xc yc zc 
-    #xc = x - (l4+l5)*r13
-    #yc = y - (l4+l5)*r23 
-    #zc = z - (l4+l5)*r33
+    
+    xc = x - (l4+l5)*r13
+    yc = y - (l4+l5)*r23 
 
-    xc = x
-    yc = y
-    zc = z
-    #find j1 j2 j3
+    #find j1 j2 j3 when j1 is in range(-90, 90)deg
     x0 = np.sqrt(xc*xc + yc*yc)
+    z = z + 0.08229 * x0 + 8.095
+        
+    zc = z - (l4+l5)*r33
     y0 = zc - l1
 
-    #distance_to_point = np.sqrt(x0* x0 + y0 * y0)
-    #if distance_to_point > 
+    print("xc")
+    print(xc)
+    print("yc)")
+    print(yc)
+    print("zc")
+    print(zc)
 
-    l2 = np.sqrt(l2_1*l2_1 + l2_2*l2_2)
-    j2_ex = np.arctan2(l2_2,l2_1)
+    print("x0")
+    print(x0)
+    print("y0")
+    print(y0)
+    print("Cos:")
+    print((x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3))
+
+    #j1
     j1_1 = -np.arctan2(xc,yc)
-    j1_2 = j1_1 + np.pi
-    #print((2*l2*l3))
-    #print(x0*x0 + y0*y0 - l2*l2 -l3*l3)
-    j3_1 = np.arccos([(x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3)])
-    j3_2 = -j3_1
-   
-    j2_1 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_1), l2 + l3*np.cos(j3_1))
-    j2_2 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_2), l2 + l3*np.cos(j3_2))
-    j2_1 = np.pi/2 - j2_ex - j2_1
-    j2_2 = np.pi/2 - j2_ex - j2_2
-    j3_1 += np.pi/2 - j2_ex
-    j3_2 += np.pi/2 - j2_ex
+    #j3
+    j3_1_1 = np.arccos([(x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3)])
+    j3_1_2 = -j3_1_1
+    #j2
+    j2_1_1 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_1_1), l2 + l3*np.cos(j3_1_1))
+    j2_1_2 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_1_2), l2 + l3*np.cos(j3_1_2))
+    j2_1_1 = np.pi/2 - j2_ex - j2_1_1
+    j2_1_2 = np.pi/2 - j2_ex - j2_1_2
+    j3_1_1 += np.pi/2 - j2_ex
+    j3_1_2 += np.pi/2 - j2_ex
     #find R0_3
-    #R0_1
-    R0_1 = R3(j1_1)
+    #R0_1_1
+    R0_1_1 = R3(j1_1)
     #R1_2
-    R1_2_1 = np.dot(R2(-np.pi/2),R3(j2_1))
-    R1_2_2 = np.dot(R2(-np.pi/2),R3(j2_2))
+    R1_2_1_1 = np.dot(R2(-np.pi/2),R3(j2_1_1))
+    R1_2_1_2 = np.dot(R2(-np.pi/2),R3(j2_1_2))
     #R2_3
-    R2_3_1 = np.dot(R2(np.pi), R3(j3_1))
-    R2_3_2 = np.dot(R2(np.pi), R3(j3_2))
+    R2_3_1_1 = np.dot(R2(np.pi), R3(j3_1_1))
+    R2_3_1_2 = np.dot(R2(np.pi), R3(j3_1_2))
     #R0_3 
-    R0_3_1 = np.dot(R0_1, np.dot(R1_2_1, R2_3_1))
-    R0_3_2 = np.dot(R0_1, np.dot(R1_2_2, R2_3_2))
-    #print(R0_3_2)
+    R0_3_1_1 = np.dot(R0_1_1, np.dot(R1_2_1_1, R2_3_1_1))
+    R0_3_1_2 = np.dot(R0_1_1, np.dot(R1_2_1_2, R2_3_1_2))
 
     #find R3_5
-    R3_5_1 = np.dot(np.transpose(R0_3_1), R)
-    R3_5_2 = np.dot(np.transpose(R0_3_2), R)
+    R3_5_1_1 = np.dot(np.transpose(R0_3_1_1), R)
+    R3_5_1_2 = np.dot(np.transpose(R0_3_1_2), R)
     #solve j4 and j5
-    cj4_1 = R3_5_1[1, 2]
-    sj4_1 = - R3_5_1[0, 2]
-    cj5_1 = - R3_5_1[2, 1]
-    sj5_1 = - R3_5_1[2, 0]
-    j4_1 = np.arctan2(sj4_1,cj4_1)
-    j5_1 = np.arctan2(sj5_1,cj5_1)
+    cj4_1_1 = R3_5_1_1[1, 2]
+    sj4_1_1 = - R3_5_1_1[0, 2]
+    cj5_1_1 = - R3_5_1_1[2, 1]
+    sj5_1_1 = - R3_5_1_1[2, 0]
+    j4_1_1 = np.arctan2(sj4_1_1,cj4_1_1)
+    j5_1_1 = np.arctan2(sj5_1_1,cj5_1_1)
 
-    cj4_2 = R3_5_2[1, 2]
-    sj4_2 = - R3_5_2[0, 2]
-    cj5_2 = - R3_5_2[2, 1]
-    sj5_2 = - R3_5_2[2, 0]
-    j4_2 = np.arctan2(sj4_2,cj4_2)
-    j5_2 = np.arctan2(sj5_2,cj5_2)
+    cj4_1_2 = R3_5_1_2[1, 2]
+    sj4_1_2 = - R3_5_1_2[0, 2]
+    cj5_1_2 = - R3_5_1_2[2, 1]
+    sj5_1_2 = - R3_5_1_2[2, 0]
+    j4_1_2 = np.arctan2(sj4_1_2,cj4_1_2)
+    j5_1_2 = np.arctan2(sj5_1_2,cj5_1_2)
+
+
+
+
+
+    #find j1 j2 j3 when j1 is over -90deg or 90deg
+    #j1
+    j1_2 = j1_1 + np.pi
+    x0 = -x0
+    #j3
+    j3_2_1 = np.arccos([(x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3)])
+    j3_2_2 = -j3_1_1
+    #j2
+    j2_2_1 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_2_1), l2 + l3*np.cos(j3_2_1))
+    j2_2_2 = np.arctan2(y0,x0) - np.arctan2(l3*np.sin(j3_2_2), l2 + l3*np.cos(j3_2_2))
+    j2_2_1 = np.pi/2 - j2_ex - j2_2_1
+    j2_2_2 = np.pi/2 - j2_ex - j2_2_2
+    j3_2_1 += np.pi/2 - j2_ex
+    j3_2_2 += np.pi/2 - j2_ex
+    #find R0_3
+    #R0_1_1
+    R0_1_2 = R3(j1_2)
+    #R1_2
+    R1_2_2_1 = np.dot(R2(-np.pi/2),R3(j2_2_1))
+    R1_2_2_2 = np.dot(R2(-np.pi/2),R3(j2_2_2))
+    #R2_3
+    R2_3_2_1 = np.dot(R2(np.pi), R3(j3_2_1))
+    R2_3_2_2 = np.dot(R2(np.pi), R3(j3_2_2))
+    #R0_3 
+    R0_3_2_1 = np.dot(R0_1_2, np.dot(R1_2_2_1, R2_3_2_1))
+    R0_3_2_2 = np.dot(R0_1_2, np.dot(R1_2_2_2, R2_3_2_2))
+    
+    #find R3_5
+    R3_5_2_1 = np.dot(np.transpose(R0_3_2_1), R)
+    R3_5_2_2 = np.dot(np.transpose(R0_3_2_2), R)
+    #solve j4 and j5
+    cj4_2_1 = R3_5_2_1[1, 2]
+    sj4_2_1 = - R3_5_2_1[0, 2]
+    cj5_2_1 = - R3_5_2_1[2, 1]
+    sj5_2_1 = - R3_5_2_1[2, 0]
+    j4_2_1 = np.arctan2(sj4_2_1,cj4_2_1)
+    j5_2_1 = np.arctan2(sj5_2_1,cj5_2_1)
+
+    cj4_2_2 = R3_5_2_2[1, 2]
+    sj4_2_2 = - R3_5_2_2[0, 2]
+    cj5_2_2 = - R3_5_2_2[2, 1]
+    sj5_2_2 = - R3_5_2_2[2, 0]
+    j4_2_2 = np.arctan2(sj4_2_2,cj4_2_2)
+    j5_2_2 = np.arctan2(sj5_2_2,cj5_2_2)
+
+    
+    #print out results
     print("First Combination: ")
-    print(j1_1*r2d, " ", j2_1*r2d, " ", j3_1*r2d, " ", j4_1*r2d, " ", j5_1*r2d)
+    print(j1_1, " ", j2_1_1, " ", j3_1_1, " ", j4_1_1, " ", j5_1_1)
     print("Second Combination: ")
-    print(j1_1*r2d, " ", j2_2*r2d, " ", j3_2*r2d, " ", j4_2*r2d, " ", j5_2*r2d)
-    #print("Third Combination: ")
-    #print(j1_2*r2d, " ", j2_1*r2d, " ", j3_1*r2d, " ", j4_1*r2d, " ", j5_1*r2d)
-    #print("Fouth Combination: ")
-    #print(j1_2*r2d, " ", j2_2*r2d, " ", j3_2*r2d, " ", j4_2*r2d, " ", j5_2*r2d)
+    print(j1_1, " ", j2_1_2, " ", j3_1_2, " ", j4_1_2, " ", j5_1_2)
+    print("Third Combination: ")
+    print(j1_2, " ", j2_2_1, " ", j3_2_1, " ", j4_2_1, " ", j5_2_1)
+    print("Fouth Combination: ")
+    print(j1_2, " ", j2_2_2, " ", j3_2_2, " ", j4_2_2, " ", j5_2_2)
 
-    #return np.array([(j1_1, j2_1, j3_1, j4_1, j5_1), (j1_1, j2_2, j3_2, j4_2, j5_2), (j1_2, j2_1, j3_1, j4_1, j5_1), (j1_2, j2_2, j3_2, j4_2, j5_2)])
-    return np.array([(j1_1, j2_1, j3_1, j4_1, j5_1), (j1_1, j2_2, j3_2, j4_2, j5_2), (10000, 10000, 10000, 10000, 10000), (10000, 10000, 10000, 10000, 10000)])
-
-
+    return np.array([(j1_1, j2_1_1, j3_1_1, j4_1_1, j5_1_1), (j1_1, j2_1_2, j3_1_2, j4_1_2, j5_1_2), 
+                     (j1_2, j2_2_1, j3_2_1, j4_2_1, j5_2_1), (j1_2, j2_2_2, j3_2_2, j4_2_2, j5_2_2)])
+    
 #pose = np.array([0, 50+200+174.15, 200+103.91, np.pi/2, np.pi/2, 0])
 #IK_geometric(pose)
 
@@ -331,6 +391,3 @@ def choose_joint_combination(joint_combinations):
             if valid_combinations[i][2] < desired_combination[2]: # pick the combination with the smalled j3 angle
                 desired_combination = valid_combinations[i]
         return desired_combination
-            
-
-    
