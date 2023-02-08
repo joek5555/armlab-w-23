@@ -674,6 +674,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName(_fromUtf8("statusbar"))
         MainWindow.setStatusBar(self.statusbar)
 
+        """
         self.sldrHlow = QtGui.QSlider(self.SliderFrame)
         self.sldrHlow.setMinimum(0)
         self.sldrHlow.setMaximum(180)
@@ -739,6 +740,7 @@ class Ui_MainWindow(object):
         self.rdoutVhigh.setMinimumSize(QtCore.QSize(30, 0))
         self.rdoutVhigh.setObjectName(_fromUtf8("rdoutVhigh"))
         self.verticalLayout_11.addWidget(self.rdoutVhigh)
+        """
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -823,10 +825,12 @@ class Ui_MainWindow(object):
         self.btn_task4.setText(_translate("MainWindow", "TASK 4", None))
         self.btn_task5.setText(_translate("MainWindow", "TASK 5", None))
 
+        """
         self.rdoutHlow.setText(_translate("MainWindow", "0", None))
         self.rdoutHhigh.setText(_translate("MainWindow", "0", None))
         self.rdoutSlow.setText(_translate("MainWindow", "0", None))
         self.rdoutShigh.setText(_translate("MainWindow", "0", None))
         self.rdoutVlow.setText(_translate("MainWindow", "0", None))
         self.rdoutVhigh.setText(_translate("MainWindow", "0", None))
+        """
 
