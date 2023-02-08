@@ -215,11 +215,13 @@ class StateMachine():
             self.camera.extrinsic_matrix[0,3] = self.camera.extrinsic_matrix[0,3] * 1000
             self.camera.extrinsic_matrix[1,3] = self.camera.extrinsic_matrix[1,3] * 1000
             self.camera.extrinsic_matrix[2,3] = self.camera.extrinsic_matrix[2,3] * 1000
+
+            self.camera.extrinsic_inverse = np.linalg.inv(self.camera.extrinsic_matrix)
             
             print("Extrinsic Matrix")
             print(self.camera.extrinsic_matrix)
             print("inv Extrinsic Matrix")
-            print(np.linalg.inv(self.camera.extrinsic_matrix))
+            print(self.camera.extrinsic_inverse)
 
             self.calibration_message= "Camera Calibrated with " + str(self.tag_camera_measurements) + " measurements"
             self.camera.camera_calibrated = True

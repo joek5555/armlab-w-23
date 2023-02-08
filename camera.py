@@ -37,11 +37,13 @@ class Camera():
 
         # mouse clicks & calibration variables
         self.camera_calibrated = False
-        self.intrinsic_matrix = np.eye(3)
-        #self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
+        #self.intrinsic_matrix = np.eye(3)
+        self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
+        self.intrinsic_inverse = np.linalg.inv(self.intrinsic_matrix)
         #self.intrinsic_matrix = np.array([(905.8, 0, 668.8), (0, 911.7, 376.8), (0, 0, 1)]) # calibrated
         #self.intrinsic_matrix = np.array([(913.4, 0, 673.0), (0, 917.4, 377.7), (0, 0, 1)]) # calibrated
         self.extrinsic_matrix = np.eye(4)
+        self.extrinsic_inverse = np.eye(4)
         self.last_click = np.array([0, 0])
         self.new_click = False
         self.rgb_click_points = np.zeros((5, 2), int)
@@ -87,8 +89,8 @@ class Camera():
 
         z = self.DepthFrameRaw[pixel_coord[1,0]][pixel_coord[0,0]] + self.z_offset
         camera_coord = np.ones([4,1])
-        camera_coord[0:3,:] = np.dot((z),np.dot(np.linalg.inv(self.intrinsic_matrix), pixel_coord))  
-        world_coord = np.dot(np.linalg.inv(self.extrinsic_matrix), camera_coord)
+        camera_coord[0:3,:] = np.dot((z),np.dot(self.intrinsic_inverse, pixel_coord))  
+        world_coord = np.dot(self.extrinsic_inverse, camera_coord)
         world_coord[2,0] = world_coord[2,0]  + self.z_m * world_coord[1,0] + self.z_b
         return world_coord
 
