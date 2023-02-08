@@ -326,6 +326,7 @@ class StateMachine():
 
         self.next_state = "idle"
 
+    '''
     def pick(self, xyz_coord):
         self.current_state = "pick"
 
@@ -378,7 +379,25 @@ class StateMachine():
         #print(self.rxarm.get_positions())
 
         self.next_state = "idle"
-    
+    '''
+
+    def pick(self, xyz_coord):
+        x = xyz_coord[0,0]
+        y = xyz_coord[1,0]
+        z = xyz_coord[2,0]
+        if self.picked_block:
+            #self.rxarm.open_gripper()
+            self.picked_block = False
+        else:
+            valid_pick = kinematics.pick_block(x, y, z, 0, self)
+            if valid_pick:
+                self.rxarm.close_gripper()
+                #self.picked_block = True
+                print("Block picked")
+            else:
+                print("Failed(pick)")
+
+        self.next_state = "idle"
 
     """ TODO """
     def detect(self):

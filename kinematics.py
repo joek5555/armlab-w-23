@@ -10,10 +10,24 @@ import numpy as np
 from scipy.linalg import expm
 from scipy.spatial.transform import Rotation
 import cv2
+import rospy
 
 import math
 
+pick_offset = -30
+place_offset = 20
+pick_approach_offset = 40
+place_approach_offset = 60
 
+#data of arm in mm
+l1 = 103.91
+l2_1 = 200
+l2_2 = 50
+l2 = np.sqrt(l2_1*l2_1 + l2_2*l2_2)
+j2_ex = np.arctan2(l2_2,l2_1)
+l3 = 200
+l4 = 65
+l5 = 66 + 43.15
 
 
 r2d = 180/np.pi
@@ -190,25 +204,7 @@ def R3(th):
     R = np.array([(np.cos(th), -np.sin(th), 0), (np.sin(th), np.cos(th), 0), (0, 0, 1)],dtype=object)
     return R
 
-
-def IK_geometric(pose):
-    #data of arm in mm
-    l1 = 103.91
-    l2_1 = 200
-    l2_2 = 50
-    l2 = np.sqrt(l2_1*l2_1 + l2_2*l2_2)
-    j2_ex = np.arctan2(l2_2,l2_1)
-    l3 = 200
-    l4 = 65
-    l5 = 66 + 43.15
-
-    #IK
-    x = pose[0]
-    y = pose[1]
-    z = pose[2]
-    p1 = pose[3]
-    p2 = pose[4]
-    p3 = pose[5]
+def R_zyz(p1, p2, p3):
     #find zyz Rotation Matrix
     cp1 = np.cos(p1)
     sp1 = np.sin(p1)
@@ -225,20 +221,32 @@ def IK_geometric(pose):
     r31 = -sp2*cp3
     r32 = sp2*sp3
     r33 = cp2
-    R = np.array([(r11, r12, r13),(r21, r22, r23),(r31, r32, r33)],dtype=object)
+    return np.array([(r11, r12, r13),(r21, r22, r23),(r31, r32, r33)],dtype=object)
+
+def IK_geometric(pose):
+    x = pose[0]
+    y = pose[1]
+    z = pose[2]
+    p1 = pose[3]
+    p2 = pose[4]
+    p3 = pose[5]
+    #find zyz Rotation Matrix
+    R = R_zyz(p1, p2, p3)
+    print("R:")
+    print(R)
     #print(R)
     #find xc yc zc 
     
-    xc = x - (l4+l5)*r13
-    yc = y - (l4+l5)*r23 
+    xc = x - (l4+l5)*R[0,2]
+    yc = y - (l4+l5)*R[1,2]
 
     #find j1 j2 j3 when j1 is in range(-90, 90)deg
     x0 = np.sqrt(xc*xc + yc*yc)
     z = z + 0.08229 * x0 + 8.095
         
-    zc = z - (l4+l5)*r33
+    zc = z - (l4+l5)*R[2,2]
     y0 = zc - l1
-
+    '''
     print("xc")
     print(xc)
     print("yc)")
@@ -252,7 +260,7 @@ def IK_geometric(pose):
     print(y0)
     print("Cos:")
     print((x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3))
-
+    '''
     #j1
     j1_1 = -np.arctan2(xc,yc)
     #j3
@@ -295,10 +303,6 @@ def IK_geometric(pose):
     sj5_1_2 = - R3_5_1_2[2, 0]
     j4_1_2 = np.arctan2(sj4_1_2,cj4_1_2)
     j5_1_2 = np.arctan2(sj5_1_2,cj5_1_2)
-
-
-
-
 
     #find j1 j2 j3 when j1 is over -90deg or 90deg
     #j1
@@ -344,8 +348,26 @@ def IK_geometric(pose):
     sj5_2_2 = - R3_5_2_2[2, 0]
     j4_2_2 = np.arctan2(sj4_2_2,cj4_2_2)
     j5_2_2 = np.arctan2(sj5_2_2,cj5_2_2)
-
     
+    j1_1 = clamp(j1_1)
+    j2_1_1 = clamp(j2_1_1)
+    j3_1_1 = clamp(j3_1_1)
+    j4_1_1 = clamp(j4_1_1)
+    j5_1_1 = clamp(j5_1_1)
+    j2_1_2 = clamp(j2_1_2)
+    j3_1_2 = clamp(j3_1_2)
+    j4_1_2 = clamp(j4_1_2)
+    j5_1_2 = clamp(j5_1_2)
+    j1_2 = clamp(j1_2)
+    j2_2_1 = clamp(j2_2_1)
+    j3_2_1 = clamp(j3_2_1)
+    j4_2_1 = clamp(j4_2_1)
+    j5_2_1 = clamp(j5_2_1)
+    j2_2_2 = clamp(j2_2_2)
+    j3_2_2 = clamp(j3_2_2)
+    j4_2_2 = clamp(j4_2_2)
+    j5_2_2 = clamp(j5_2_2)
+    '''
     #print out results
     print("First Combination: ")
     print(j1_1, " ", j2_1_1, " ", j3_1_1, " ", j4_1_1, " ", j5_1_1)
@@ -355,7 +377,7 @@ def IK_geometric(pose):
     print(j1_2, " ", j2_2_1, " ", j3_2_1, " ", j4_2_1, " ", j5_2_1)
     print("Fouth Combination: ")
     print(j1_2, " ", j2_2_2, " ", j3_2_2, " ", j4_2_2, " ", j5_2_2)
-
+    '''
     return np.array([(j1_1, j2_1_1, j3_1_1, j4_1_1, j5_1_1), (j1_1, j2_1_2, j3_1_2, j4_1_2, j5_1_2), 
                      (j1_2, j2_2_1, j3_2_1, j4_2_1, j5_2_1), (j1_2, j2_2_2, j3_2_2, j4_2_2, j5_2_2)])
     
@@ -391,3 +413,65 @@ def choose_joint_combination(joint_combinations):
             if valid_combinations[i][2] < desired_combination[2]: # pick the combination with the smalled j3 angle
                 desired_combination = valid_combinations[i]
         return desired_combination
+
+def is_valid(desired_joint_combination):
+    if desired_joint_combination[1] == -1000:
+        return False
+    else:
+        return True
+
+def can_pick_from_top(x, y, z):
+    R = R_zyz(np.pi/2, np.pi,  0)
+    xc = x - (l4+l5)*R[0,2]
+    yc = y - (l4+l5)*R[1,2]
+    x0 = np.sqrt(xc*xc + yc*yc)
+    z = z + 0.08229 * x0 + 8.095        
+    zc = z - (l4+l5)*R[2,2]
+    y0 = zc - l1
+    if abs((x0*x0 + y0*y0 - l2*l2 -l3*l3)/(2*l2*l3)) <= 1:
+        print("Pick from top")
+        return True
+    else:
+        print("Pick from side")
+        return False
+
+def choose_orientation_pick(x, y, z, angle):
+    pick_from_top = False
+    #print("Desired orientation:")
+    if can_pick_from_top(x, y, z):
+        pick_from_top = True
+        #print(np.pi/2, "  ", np.pi, "  ", angle)
+        return [np.pi/2, np.pi, angle]
+    else:
+        j1 = -np.arctan2(x,y)
+        #print(j1+np.pi/2, "  ", np.pi/2, "  ", 0)
+        return [j1+np.pi/2, np.pi/2, 0]
+
+def choose_orientation_place(x, y, z):
+
+    return
+
+def pick_block(x, y, z, angle, self):
+    #prevent touching the plate
+    if z < 10:
+        z = 50
+    ori = choose_orientation_pick(x, y, z+pick_approach_offset , angle)
+    pose_approach = np.array([x, y, z+pick_approach_offset, ori[0], ori[1], ori[2]])
+    joint_combinations_approach = IK_geometric(pose_approach)
+    desired_joint_combination_approach = choose_joint_combination(joint_combinations_approach)
+    if is_valid(desired_joint_combination_approach):
+        self.rxarm.set_positions(desired_joint_combination_approach)
+        rospy.sleep(5)
+        pose_pick = np.array([x, y, z+pick_offset, ori[0], ori[1], ori[2]])
+        joint_combinations_pick = IK_geometric(pose_pick)
+        desired_joint_combination_pick = choose_joint_combination(joint_combinations_pick)
+        if is_valid(desired_joint_combination_pick):
+            self.rxarm.set_positions(desired_joint_combination_pick)
+            rospy.sleep(5)
+            return True
+        else:
+            print("Can't pick block")
+            return False
+    else:
+        print("Can't approach block")
+        return False
