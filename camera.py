@@ -35,8 +35,8 @@ class Camera():
 
         # mouse clicks & calibration variables
         self.camera_calibrated = False
-        self.intrinsic_matrix = np.eye(3)
-        #self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
+        #self.intrinsic_matrix = np.eye(3)
+        self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
         #self.intrinsic_matrix = np.array([(905.8, 0, 668.8), (0, 911.7, 376.8), (0, 0, 1)]) # calibrated
         #self.intrinsic_matrix = np.array([(913.4, 0, 673.0), (0, 917.4, 377.7), (0, 0, 1)]) # calibrated
         self.extrinsic_matrix = np.eye(4)
