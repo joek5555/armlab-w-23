@@ -70,13 +70,21 @@ class Camera():
         self.block_contours = np.array([])
         self.block_detections = np.array([])
 
-        self.red_thresh = np.array([[167,4], [111,255], [41,255]], dtype= np.float32)
-        self.orange_thresh = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
-        self.yellow_thresh = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
-        self.green_thresh = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
-        self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
-        self.purple_thresh = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
-        self.xy_thresh = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
+        self.red_threshold = np.array([[167,4], [111,255], [41,255]], dtype= np.float32)
+        self.orange_threshold = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
+        self.yellow_threshold = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
+        self.green_threshold = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
+        self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
+        self.purple_threshold = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
+        # (color_str, color_BGR, color_threshold)
+        self.colors = [("red", (255, 0, 0), self.red_threshold), 
+                        ("orange", (255, 165, 0), self.orange_threshold), 
+                        ("yellow", (255, 255, 0), self.yellow_threshold), 
+                        ("green", (0, 255, 0), self.green_threshold), 
+                        ("blue", (0,0,255), self.blue_threshold), 
+                        ("purple", (160, 32, 240), self.purple_threshold)]
+
+        self.xy_threshold = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
         self.erosion_kernel_size = 1
         self.erosion_kernel_shape = 0 # 0 is rectangle
         self.dilation_kernel_size = 1
@@ -297,14 +305,10 @@ class Camera():
         #self.DetectionFrame = self.VideoFrame.copy()
         rgb_image = self.VideoFrame.copy()
         depth_image = self.DepthFrameRaw.copy()
-        rgb_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-        hsv_image = cv2.cvtColor(rgb_image_cv, cv2.COLOR_BGR2HSV)
 
-        contours, boxes = DetectBlocks(hsv_image, depth_image, self)
+        rgb_image, contours, rectangles = DetectBlocks(rgb_image, depth_image, self)
 
-        cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
-        for box in boxes:
-            cv2.drawContours(rgb_image, [box], 0, (0,255,0) , 3)
+        
         #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)
         #mask_image = np.stack((mask, np.zeros_like(mask), np.zeros_like(mask)), axis = 2)
         self.DetectionFrame = rgb_image

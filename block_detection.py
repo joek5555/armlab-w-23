@@ -92,40 +92,55 @@ def FindContours(image, contour_constraints):
     contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     
     #cv2.drawContours(rgb_image_copy, contours, -1, (0,0,0) , 1)
-    boxes = []
     rectangles = []
     for single_contour in contours:
         rectangle = cv2.minAreaRect(single_contour)
         if rectangle[1][0] > contour_constraints[0] and rectangle[1][1] > contour_constraints[0]:
+            rectangles.append(rectangle)
+
+
+    return contours, rectangles
+
+
+def DetectBlocks(rgb_image, depth_image, camera_object):
+    """
+    """
+    bgr_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+    hsv_image = cv2.cvtColor(bgr_image_cv, cv2.COLOR_BGR2HSV)
+
+    camera_calibrated = camera_object.camera_calibrated
+    if camera_calibrated:
+        position_image = Depth2Position(depth_image, camera_object)
+        xy_position_mask = PositionThreshold(position_image, camera_object.xy_threshold)
+
+    # color is a tuple with (color_str, color_bgr, color_threshold)
+    for color in camera_object.colors:
+        hsv_mask = HSVThreshold(hsv_image, color[2])
+        if camera_calibrated:
+            
+            mask = cv2.bitwise_and(hsv_mask, xy_position_mask)
+        else:
+            mask = hsv_mask
+
+        morphological_mask = Morphological(mask, camera_object.morphological_constraints)
+        
+        contours, rectangles = FindContours(morphological_mask, camera_object.contour_constraints)
+
+        #cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
+        for rectangle in rectangles:
             box = cv2.boxPoints(rectangle)
             box = np.int0(box)
-            boxes.append(box)
-            rectangles.append(rectangle)
-            #cv2.drawContours(rgb_image_copy, [box], 0, (0,255,0) , 3)
+            center = np.array([rectangle[0][0], rectangle[0][1]])
+            center = center.astype(int)
 
-    return contours, boxes, rectangles
+            cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
+            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 2)
 
-
-def DetectBlocks(hsv_image, depth_image, camera_object):
-    """
-    """
-    
-    hsv_mask = HSVThreshold(hsv_image, camera_object.blue_thresh)
-    if camera_object.camera_calibrated:
-        position_image = Depth2Position(depth_image, camera_object)
-        xy_position_mask = PositionThreshold(position_image, camera_object.xy_thresh)
-        mask = cv2.bitwise_and(hsv_mask, xy_position_mask)
-    else:
-        mask = hsv_mask
-
-    morphological_mask = Morphological(mask, camera_object.morphological_constraints)
-    
-    contours, boxes, rectangles = FindContours(morphological_mask, camera_object.contour_constraints)
-    if len(rectangles) > 0 and camera_object.camera_calibrated:
-        center = rectangles[0][0]
-        rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
-        rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
-        rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
-        #print(rectangle_world_coord)
-    return contours, boxes
+        #if len(rectangles) > 0 and camera_object.camera_calibrated:
+        #    center = rectangles[0][0]
+        #    rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
+        #    rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
+        #    rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
+            #print(rectangle_world_coord)
+    return rgb_image, contours, rectangles
     
