@@ -372,6 +372,19 @@ class Ui_MainWindow(object):
         self.rdoutMouseWorld.setTextFormat(QtCore.Qt.AutoText)
         self.rdoutMouseWorld.setObjectName(_fromUtf8("rdoutMouseWorld"))
         self.horizontalLayout_2.addWidget(self.rdoutMouseWorld)
+
+        # jk add
+        self.rdoutMouseWorld2 = QtGui.QLabel(self.centralwidget) 
+        font = QtGui.QFont()
+        font.setFamily(_fromUtf8("Ubuntu Mono"))
+        font.setPointSize(12)
+        font.setBold(True)
+        font.setWeight(75)
+        self.rdoutMouseWorld2.setFont(font)
+        self.rdoutMouseWorld2.setTextFormat(QtCore.Qt.AutoText)
+        self.rdoutMouseWorld2.setObjectName(_fromUtf8("rdoutMouseWorld2"))
+        self.horizontalLayout_2.addWidget(self.rdoutMouseWorld2)
+
         spacerItem5 = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
         self.horizontalLayout_2.addItem(spacerItem5)
         self.verticalLayout_4.addLayout(self.horizontalLayout_2)
@@ -794,6 +807,9 @@ class Ui_MainWindow(object):
         self.rdoutMousePixels.setText(_translate("MainWindow", "(U,V,D)", None))
         self.PixelCoordLabel_2.setText(_translate("MainWindow", "World Coordinates [mm]:", None))
         self.rdoutMouseWorld.setText(_translate("MainWindow", "(X,Y,Z)", None))
+
+        self.rdoutMouseWorld2.setText(_translate("MainWindow", "(X,Y,Z)", None)) # jk add
+
         self.BLabelS.setText(_translate("MainWindow", "Base", None))
         self.rdoutBase.setText(_translate("MainWindow", "0", None))
         self.SLabelS.setText(_translate("MainWindow", "Shoulder", None))

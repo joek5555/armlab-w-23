@@ -223,7 +223,7 @@ class StateMachine():
             print("inv Extrinsic Matrix")
             print(self.camera.extrinsic_inverse)
 
-            self.calibration_message= "Camera Calibrated with " + str(self.tag_camera_measurements) + " measurements"
+            self.calibration_message= "Calibrated with " + str(self.tag_camera_measurements) + " measures"
             self.camera.camera_calibrated = True
 
         self.tag_camera_pose = [0,0,0,0]

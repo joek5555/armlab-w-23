@@ -74,9 +74,9 @@ class Camera():
         self.orange_thresh = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
         self.yellow_thresh = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
         self.green_thresh = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
-        #self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
-        self.blue_thresh = np.array([[90, 125], [50, 255], [35,255]], dtype= np.float32)
+        self.blue_thresh = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
         self.purple_thresh = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
+        self.xy_thresh = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
         self.erosion_kernel_size = 1
         self.erosion_kernel_shape = 0 # 0 is rectangle
         self.dilation_kernel_size = 1
@@ -84,6 +84,18 @@ class Camera():
         self.morphological_constraints = np.array([self.erosion_kernel_size, self.erosion_kernel_shape, self.dilation_kernel_size, self.dilation_kernel_shape])
         self.min_pixels_for_rectangle = 10
         self.contour_constraints = np.array([self.min_pixels_for_rectangle])
+
+        # self.pixel_grid stores a [921600, 3, 1] array, where each position on axis 0 is a pizel location,
+        # and each element on axis 1 is the u,v,1 values at that position
+        self.pixel_grid = np.array(np.meshgrid(np.arange(0,1280,1), np.arange(0,720,1)))
+        self.pixel_grid = self.pixel_grid.transpose(2,1,0)
+        self.pixel_grid = self.pixel_grid.reshape(-1,2,1)
+        self.pixel_grid = np.concatenate((self.pixel_grid, np.ones((921600, 1, 1))), axis = 1)
+
+        self.world_correction_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, self.z_m, 1, self.z_b]])
+
+        self.position_image = np.zeros((720,1280,3))
+
 
     def pixel2World(self, pixel_coord):
 
@@ -284,9 +296,12 @@ class Camera():
     def BlockDetection(self):
         #self.DetectionFrame = self.VideoFrame.copy()
         rgb_image = self.VideoFrame.copy()
+        depth_image = self.DepthFrameRaw.copy()
         rgb_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
         hsv_image = cv2.cvtColor(rgb_image_cv, cv2.COLOR_BGR2HSV)
-        mask, contours, boxes = DetectBlocks(hsv_image, self.green_thresh, self.morphological_constraints, self.contour_constraints)
+
+        contours, boxes = DetectBlocks(hsv_image, depth_image, self)
+
         cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
         for box in boxes:
             cv2.drawContours(rgb_image, [box], 0, (0,255,0) , 3)

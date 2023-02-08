@@ -282,6 +282,10 @@ class Gui(QMainWindow):
                                              (pt.x(), pt.y(), z))
             self.ui.rdoutMouseWorld.setText("(%.0f,%.0f,%.0f)"%
                                             (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
+            self.ui.rdoutMouseWorld2.setText("(%.0f,%.0f,%.0f)"%
+                                            (self.camera.position_image[pt.y(), pt.x(), 0], 
+                                            self.camera.position_image[pt.y(), pt.x(), 1], 
+                                            self.camera.position_image[pt.y(), pt.x(), 2]))
 
     def calibrateMousePress(self, mouse_event):
         """!

@@ -2,9 +2,39 @@ import numpy as np
 import cv2
 
 
-def ThresholdImage(hsv_image, thresh):
+def Depth2Position(depth_image, camera_object):
     """
-    Create a binary image using a hsv threshold
+    Create an array containing the xyz position of each pixel
+    3 channel image, (x,y,z) is channel order
+    """
+    extended_intrinsic_inverse = np.broadcast_to(camera_object.intrinsic_inverse, (921600, 3, 3))
+    camera_frame = np.matmul(extended_intrinsic_inverse, camera_object.pixel_grid)
+    z = depth_image.transpose(1,0)
+    z = np.ravel(z)
+    z = z + camera_object.z_offset
+    z = z.reshape(-1,1)
+    z = np.broadcast_to(z, (921600, 3))
+    z = z.reshape(921600, 3, 1)
+
+    camera_frame = np.multiply(z, camera_frame)
+    camera_frame = np.concatenate((camera_frame, np.ones((921600,1,1))), axis = 1)
+    
+    extended_extrinsic_inverse = np.broadcast_to(camera_object.extrinsic_inverse, (921600, 4, 4))
+    world_frame = np.matmul(extended_extrinsic_inverse, camera_frame)
+    world_frame = np.matmul(camera_object.world_correction_matrix, world_frame)
+
+    position_image = world_frame.transpose(0,2,1)
+    position_image = position_image.reshape(1280,720,3)
+    position_image = position_image.transpose(1,0,2)
+
+    camera_object.position_image = position_image
+
+    return position_image
+
+
+def HSVThreshold(hsv_image, thresh):
+    """
+    Create a binary mask using a hsv threshold
     """
     #mask = cv2.inRange(depth_data, center_val - width_val, center_val + width_val)
     #masked_img = cv2.bitwise_and(rgb_image, rgb_image, mask=mask)
@@ -14,6 +44,17 @@ def ThresholdImage(hsv_image, thresh):
         thresh_image = cv2.bitwise_or(thresh_image_low, thresh_image_high)
     else:
         thresh_image = cv2.inRange(hsv_image, (thresh[0,0].item(), thresh[1,0].item(), thresh[2,0].item()), (thresh[0,1].item(), thresh[1,1].item(), thresh[2,1].item()))
+
+    return thresh_image
+
+def PositionThreshold(position_image, thresh):
+    """
+    Create a binary mask using position threshold
+    """
+    #mask = cv2.inRange(depth_data, center_val - width_val, center_val + width_val)
+    #masked_img = cv2.bitwise_and(rgb_image, rgb_image, mask=mask)
+
+    thresh_image = cv2.inRange(position_image, (thresh[0,0].item(), thresh[1,0].item(), thresh[2,0].item()), (thresh[0,1].item(), thresh[1,1].item(), thresh[2,1].item()))
 
     return thresh_image
 
@@ -63,12 +104,20 @@ def FindContours(image, contour_constraints):
     return contours, boxes
 
 
-def DetectBlocks(image, threshold, morphological_constraints, contour_constraints):
+def DetectBlocks(hsv_image, depth_image, camera_object):
     """
     """
-    image1 = ThresholdImage(image, threshold)
-    image2 = Morphological(image1, morphological_constraints)
     
-    contours, boxes = FindContours(image2, contour_constraints)
-    return image1, contours, boxes
+    hsv_mask = HSVThreshold(hsv_image, camera_object.blue_thresh)
+    if camera_object.camera_calibrated:
+        position_image = Depth2Position(depth_image, camera_object)
+        xy_position_mask = PositionThreshold(position_image, camera_object.xy_thresh)
+        mask = cv2.bitwise_and(hsv_mask, xy_position_mask)
+    else:
+        mask = hsv_mask
+
+    morphological_mask = Morphological(mask, camera_object.morphological_constraints)
+    
+    contours, boxes = FindContours(morphological_mask, camera_object.contour_constraints)
+    return contours, boxes
     
