@@ -93,15 +93,17 @@ def FindContours(image, contour_constraints):
     
     #cv2.drawContours(rgb_image_copy, contours, -1, (0,0,0) , 1)
     boxes = []
+    rectangles = []
     for single_contour in contours:
-        rect = cv2.minAreaRect(single_contour)
-        if rect[1][0] > contour_constraints[0] and rect[1][1] > contour_constraints[0]:
-            box = cv2.boxPoints(rect)
+        rectangle = cv2.minAreaRect(single_contour)
+        if rectangle[1][0] > contour_constraints[0] and rectangle[1][1] > contour_constraints[0]:
+            box = cv2.boxPoints(rectangle)
             box = np.int0(box)
             boxes.append(box)
+            rectangles.append(rectangle)
             #cv2.drawContours(rgb_image_copy, [box], 0, (0,255,0) , 3)
 
-    return contours, boxes
+    return contours, boxes, rectangles
 
 
 def DetectBlocks(hsv_image, depth_image, camera_object):
@@ -118,6 +120,12 @@ def DetectBlocks(hsv_image, depth_image, camera_object):
 
     morphological_mask = Morphological(mask, camera_object.morphological_constraints)
     
-    contours, boxes = FindContours(morphological_mask, camera_object.contour_constraints)
+    contours, boxes, rectangles = FindContours(morphological_mask, camera_object.contour_constraints)
+    if len(rectangles) > 0 and camera_object.camera_calibrated:
+        center = rectangles[0][0]
+        rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
+        rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
+        rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
+        #print(rectangle_world_coord)
     return contours, boxes
     
