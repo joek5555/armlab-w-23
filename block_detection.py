@@ -85,7 +85,7 @@ def Morphological(image, morphological_constraints):
     
     return eroded_dilated_image
 
-def FindContours(image, contour_constraints):
+def FindBoundingRectangles(image, contour_constraints):
     """
     find the contours and boxes within the image
     """
@@ -99,12 +99,13 @@ def FindContours(image, contour_constraints):
             rectangles.append(rectangle)
 
 
-    return contours, rectangles
+    return rectangles
 
 
 def DetectBlocks(rgb_image, depth_image, camera_object):
     """
     """
+    distance_threshold_bool = False
     bgr_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
     hsv_image = cv2.cvtColor(bgr_image_cv, cv2.COLOR_BGR2HSV)
 
@@ -124,23 +125,57 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
 
         morphological_mask = Morphological(mask, camera_object.morphological_constraints)
         
-        contours, rectangles = FindContours(morphological_mask, camera_object.contour_constraints)
+        rectangles = FindBoundingRectangles(morphological_mask, camera_object.contour_constraints)
 
         #cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
         for rectangle in rectangles:
+
+            if camera_calibrated and distance_threshold_bool:
+                center = np.array([rectangle[0][0], rectangle[0][1]])
+                center = center.astype(int)
+                #rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
+                #rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
+                #rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
+                center_world = np.array([camera_object.position_image[center[1], center[0], 0],
+                                                camera_object.position_image[center[1], center[0], 1],
+                                                camera_object.position_image[center[1], center[0], 2] ])
+
+                z_low = center_world[2] - camera_object.rectangle_z_offset
+                z_high = center_world[2] + camera_object.rectangle_z_offset   
+                x_low = center_world[0] - camera_object.rectangle_xy_offset
+                x_high = center_world[0] + camera_object.rectangle_xy_offset
+                y_low = center_world[1] - camera_object.rectangle_xy_offset
+                y_high = center_world[1] + camera_object.rectangle_xy_offset
+                
+                new_position_threshold = np.array([[x_low, x_high], [y_low, y_high], [z_low,z_high]], dtype= np.float32)
+                #print(new_position_threshold)
+                new_position_mask = PositionThreshold(position_image, new_position_threshold)  
+                new_mask = cv2.bitwise_and(morphological_mask, new_position_mask) 
+                #new_mask = new_position_mask
+                ###
+                #new_mask_image = new_mask * 255
+                #new_mask_image = new_mask_image.reshape(720, 1280, 1)
+                #new_mask_image = np.broadcast_to(new_mask_image, (720, 1280, 3))
+                #rgb_image = new_mask_image
+                ###
+                new_rectangles = FindBoundingRectangles(new_mask, camera_object.contour_constraints)
+                if len(new_rectangles) < 1:
+                    print("Error: no rectangles detected")
+                elif len(new_rectangles) > 1: # if there is more than one rectangle, pick rectangle with largest length and width
+                    print("Error: more than one rectangle detected")
+                    rectangle = new_rectangles[0]
+                    for new_rectangle in new_rectangles: 
+                        if new_rectangle[1][0] + new_rectangle[1][1] > rectangle[1][0] + rectangle[1][1]:
+                            rectangle = new_rectangle
+                else:
+                    rectangle = new_rectangles[0]
+                
             box = cv2.boxPoints(rectangle)
             box = np.int0(box)
             center = np.array([rectangle[0][0], rectangle[0][1]])
             center = center.astype(int)
-
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 2)
+            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
-        #if len(rectangles) > 0 and camera_object.camera_calibrated:
-        #    center = rectangles[0][0]
-        #    rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
-        #    rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
-        #    rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
-            #print(rectangle_world_coord)
-    return rgb_image, contours, rectangles
+    return rgb_image, rectangles
     

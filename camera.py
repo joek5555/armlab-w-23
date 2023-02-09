@@ -103,6 +103,8 @@ class Camera():
         self.world_correction_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, self.z_m, 1, self.z_b]])
 
         self.position_image = np.zeros((720,1280,3))
+        self.rectangle_z_offset = 1 # may need to tune
+        self.rectangle_xy_offset = 42.5 # takes into account largest block we will pick up
 
 
     def pixel2World(self, pixel_coord):
@@ -306,7 +308,7 @@ class Camera():
         rgb_image = self.VideoFrame.copy()
         depth_image = self.DepthFrameRaw.copy()
 
-        rgb_image, contours, rectangles = DetectBlocks(rgb_image, depth_image, self)
+        rgb_image, rectangles = DetectBlocks(rgb_image, depth_image, self)
 
         
         #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)
