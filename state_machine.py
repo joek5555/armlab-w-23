@@ -381,18 +381,19 @@ class StateMachine():
         self.next_state = "idle"
     '''
 
-    def pick(self, xyz_coord):
+    def pick(self, xyz_coord, angle=0):
         x = xyz_coord[0,0]
         y = xyz_coord[1,0]
         z = xyz_coord[2,0]
         if self.picked_block:
-            #self.rxarm.open_gripper()
-            self.picked_block = False
+            valid_place = kinematics.place_block(x, y, z, False, self)
+            if valid_place:
+                print("Block plaaced")
+            else:
+                print("Failed(place)")
         else:
-            valid_pick = kinematics.pick_block(x, y, z, 0, self)
+            valid_pick = kinematics.pick_block(x, y, z, angle, self)
             if valid_pick:
-                self.rxarm.close_gripper()
-                #self.picked_block = True
                 print("Block picked")
             else:
                 print("Failed(pick)")

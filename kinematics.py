@@ -14,7 +14,7 @@ import rospy
 
 import math
 
-pick_offset = -30
+pick_offset = -40
 place_offset = 20
 pick_approach_offset = 40
 place_approach_offset = 60
@@ -232,8 +232,8 @@ def IK_geometric(pose):
     p3 = pose[5]
     #find zyz Rotation Matrix
     R = R_zyz(p1, p2, p3)
-    print("R:")
-    print(R)
+    #print("R:")
+    #print(R)
     #print(R)
     #find xc yc zc 
     
@@ -367,6 +367,11 @@ def IK_geometric(pose):
     j3_2_2 = clamp(j3_2_2)
     j4_2_2 = clamp(j4_2_2)
     j5_2_2 = clamp(j5_2_2)
+    if p2 != np.pi:
+        if j1_1 > 0.2613:
+            j1_1 += 0.02007*j1_1 + 1.639*np.pi/180
+        elif j1_1 < -0.2613:
+            j1_1 -= 0.02007*(-j1_1) + 1.639*np.pi/180
     '''
     #print out results
     print("First Combination: ")
@@ -421,6 +426,7 @@ def is_valid(desired_joint_combination):
         return True
 
 def can_pick_from_top(x, y, z):
+    z += pick_approach_offset
     R = R_zyz(np.pi/2, np.pi,  0)
     xc = x - (l4+l5)*R[0,2]
     yc = y - (l4+l5)*R[1,2]
@@ -447,30 +453,89 @@ def choose_orientation_pick(x, y, z, angle):
         #print(j1+np.pi/2, "  ", np.pi/2, "  ", 0)
         return [j1+np.pi/2, np.pi/2, 0]
 
-def choose_orientation_place(x, y, z):
+def choose_orientation_place(x, y, z, place_from_top, angle = np.pi/2):
+    if(place_from_top):
+        return [np.pi/2, np.pi, angle]
+    else:
+        j1 = -np.arctan2(x,y)
+        #print(j1+np.pi/2, "  ", np.pi/2, "  ", 0)
+        return [j1+np.pi/2, np.pi/2, 0]
 
-    return
+def desired_joint_combination(pose):
+    joint_combinations = IK_geometric(pose)
+    desired_joint_combination = choose_joint_combination(joint_combinations)
+    return desired_joint_combination
 
 def pick_block(x, y, z, angle, self):
+    sleep_time = 3
     #prevent touching the plate
     if z < 10:
         z = 50
+    pick_from_top = can_pick_from_top(x,y,z)
     ori = choose_orientation_pick(x, y, z+pick_approach_offset , angle)
     pose_approach = np.array([x, y, z+pick_approach_offset, ori[0], ori[1], ori[2]])
-    joint_combinations_approach = IK_geometric(pose_approach)
-    desired_joint_combination_approach = choose_joint_combination(joint_combinations_approach)
+    desired_joint_combination_approach = desired_joint_combination(pose_approach)
     if is_valid(desired_joint_combination_approach):
         self.rxarm.set_positions(desired_joint_combination_approach)
-        rospy.sleep(5)
+        rospy.sleep(sleep_time)
         pose_pick = np.array([x, y, z+pick_offset, ori[0], ori[1], ori[2]])
-        joint_combinations_pick = IK_geometric(pose_pick)
-        desired_joint_combination_pick = choose_joint_combination(joint_combinations_pick)
+        desired_joint_combination_pick = desired_joint_combination(pose_pick)
         if is_valid(desired_joint_combination_pick):
             self.rxarm.set_positions(desired_joint_combination_pick)
-            rospy.sleep(5)
+            rospy.sleep(sleep_time)
+            self.rxarm.close_gripper()
+            self.picked_block = True
+            self.rxarm.set_positions(desired_joint_combination_approach)
+            rospy.sleep(sleep_time)
+            if pick_from_top == False:
+                self.rxarm.set_positions(np.array([0, 0, 0, 0, 0]))
+                rospy.sleep(sleep_time)
+                store_location = [350, -75]
+                j1 = -np.arctan2(store_location[0],store_location[1])
+                pose_ori = j1+np.pi/2
+                pose_store_approach = np.array([store_location[0], store_location[1], 100, pose_ori, ori[1], ori[2]])
+                pose_store = np.array([store_location[0], store_location[1], place_offset, pose_ori, ori[1], ori[2]])
+                desired_joint_combination_store_approach = desired_joint_combination(pose_store_approach)
+                desired_joint_combination_store = desired_joint_combination(pose_store)
+                self.rxarm.set_positions(desired_joint_combination_store_approach)
+                rospy.sleep(sleep_time)
+                self.rxarm.set_positions(desired_joint_combination_store)
+                rospy.sleep(sleep_time)
+                self.rxarm.open_gripper()
+                self.picked_block = False
+                self.rxarm.set_positions(desired_joint_combination_store_approach)
+                rospy.sleep(sleep_time)
+                self.rxarm.set_positions(np.array([0, 0, 0, 0, 0]))
+                rospy.sleep(sleep_time)
             return True
         else:
             print("Can't pick block")
+            return False
+    else:
+        print("Can't approach block")
+        return False
+
+def place_block(x, y, z, place_from_top, self, angle = np.pi/2):
+    sleep_time = 3
+    #prevent touching the plate
+    ori = choose_orientation_place(x, y, z+place_approach_offset, place_from_top)
+    pose_approach = np.array([x, y, z+place_approach_offset, ori[0], ori[1], ori[2]])
+    desired_joint_combination_approach = desired_joint_combination(pose_approach)
+    if is_valid(desired_joint_combination_approach):
+        self.rxarm.set_positions(desired_joint_combination_approach)
+        rospy.sleep(sleep_time)
+        pose_place = np.array([x, y, z + place_offset, ori[0], ori[1], ori[2]])
+        desired_joint_combination_place = desired_joint_combination(pose_place)
+        if is_valid(desired_joint_combination_place):
+            self.rxarm.set_positions(desired_joint_combination_place)
+            rospy.sleep(sleep_time)
+            self.rxarm.open_gripper()
+            self.picked_block = False
+            self.rxarm.set_positions(desired_joint_combination_approach)
+            rospy.sleep(sleep_time)
+            return True
+        else:
+            print("Can't place block")
             return False
     else:
         print("Can't approach block")
