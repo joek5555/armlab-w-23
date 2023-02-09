@@ -105,7 +105,7 @@ def FindBoundingRectangles(image, contour_constraints):
 def DetectBlocks(rgb_image, depth_image, camera_object):
     """
     """
-    distance_threshold_bool = False
+    distance_threshold_bool = True
     bgr_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
     hsv_image = cv2.cvtColor(bgr_image_cv, cv2.COLOR_BGR2HSV)
 
