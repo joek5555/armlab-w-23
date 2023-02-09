@@ -133,6 +133,24 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
             center = np.array([rectangle[0][0], rectangle[0][1]])
             center = center.astype(int)
 
+            box1_world = np.array([position_image[box[0,0], box[0,1], 0], position_image[box[0,0], box[0,1], 1], position_image[box[0,0], box[0,1], 2]])
+            box2_world = np.array([position_image[box[1,0], box[1,1], 0], position_image[box[1,0], box[1,1], 1], position_image[box[1,0], box[1,1], 2]])
+            box3_world = np.array([position_image[box[2,0], box[2,1], 0], position_image[box[2,0], box[2,1], 1], position_image[box[2,0], box[2,1], 2]])
+
+            distance1 = np.sqrt(np.square(box1_world[0] - box2_world[0]) + np.square(box1_world[1] - box2_world[1]) )
+            distance2 = np.sqrt(np.square(box2_world[0] - box3_world[0]) + np.square(box2_world[1] - box3_world[1]) )
+            if distance1 < distance2:
+                side_ratio = distance1/distance2
+            else:
+                side_ratio = distance2/distance1
+
+            if distance1 < 30 and distance2 < 30:
+                print("small block")
+            else:
+                print("large block")
+            print("side_ratio")
+            print(side_ratio)
+
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
             cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
