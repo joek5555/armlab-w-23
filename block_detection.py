@@ -134,7 +134,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
             center = center.astype(int)
 
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 2)
+            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
         #if len(rectangles) > 0 and camera_object.camera_calibrated:
         #    center = rectangles[0][0]

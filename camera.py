@@ -44,6 +44,8 @@ class Camera():
         #self.intrinsic_matrix = np.array([(913.4, 0, 673.0), (0, 917.4, 377.7), (0, 0, 1)]) # calibrated
         self.extrinsic_matrix = np.eye(4)
         self.extrinsic_inverse = np.eye(4)
+        self.homography_matrix = np.eye(3)
+
         self.last_click = np.array([0, 0])
         self.new_click = False
         self.rgb_click_points = np.zeros((5, 2), int)
@@ -274,23 +276,7 @@ class Camera():
         
         if self.camera_calibrated:
 
-            #edge_points_world = np.array([[450,-125, -10],[-450,-125, -10],[-450, 425, 10], [450, 425, 10]])
-            edge_points_world = np.array([[250,-25, -10],[-250,-25, -10],[-250, 275, 10], [250, 275, 10]])
-            edge_points_pixel = np.zeros((4,2))
-            for i in range(4):
-                world_point = edge_points_world[i,:]
-                
-                world_point = np.append(world_point, 1)
-                camera_point = np.dot(self.extrinsic_matrix, world_point)
-                pixel_point = np.dot(self.intrinsic_matrix ,np.delete(camera_point, -1))
-                z = self.DepthFrameRaw[world_point[1]][world_point[0]] + self.z_offset
-                edge_points_pixel[i,0] =  pixel_point[0] / z
-                edge_points_pixel[i,1] =  pixel_point[1] / z
-
-            remap_points_pixel = np.array([[890,510],[390,510],[390, 210], [890, 210]])
-
-            H = cv2.findHomography(edge_points_pixel,remap_points_pixel)[0]
-            #self.GridFrame = cv2.warpPerspective(self.GridFrame, H, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
+            self.GridFrame = cv2.warpPerspective(self.GridFrame, self.homography_matrix, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
             #H = cv2.findAffine(edge_points_pixel[],remap_points_pixel)[0]
             
 
