@@ -133,26 +133,49 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
             center = np.array([rectangle[0][0], rectangle[0][1]])
             center = center.astype(int)
 
-            box1_world = np.array([position_image[box[0,0], box[0,1], 0], position_image[box[0,0], box[0,1], 1], position_image[box[0,0], box[0,1], 2]])
-            box2_world = np.array([position_image[box[1,0], box[1,1], 0], position_image[box[1,0], box[1,1], 1], position_image[box[1,0], box[1,1], 2]])
-            box3_world = np.array([position_image[box[2,0], box[2,1], 0], position_image[box[2,0], box[2,1], 1], position_image[box[2,0], box[2,1], 2]])
+            block_size_str = ""
+            orientation_str = ""
 
-            distance1 = np.sqrt(np.square(box1_world[0] - box2_world[0]) + np.square(box1_world[1] - box2_world[1]) )
-            distance2 = np.sqrt(np.square(box2_world[0] - box3_world[0]) + np.square(box2_world[1] - box3_world[1]) )
-            if distance1 < distance2:
+
+            if camera_calibrated and box[0,0] < 1280 and box[1,0] < 1280 and box[2,0] < 1280 and box[3,0] < 1280 and box[0,1] < 720 and box[1,1] < 720 and box[2,1] < 720 and box[3,1] < 720:
+
+
+                box1_world = np.array([position_image[box[0,1], box[0,0], 0], position_image[box[0,1], box[0,0], 1], position_image[box[0,1], box[0,0], 2]])
+                box2_world = np.array([position_image[box[1,1], box[1,0], 0], position_image[box[1,1], box[1,0], 1], position_image[box[1,1], box[1,0], 2]])
+                box3_world = np.array([position_image[box[2,1], box[2,0], 0], position_image[box[2,1], box[2,0], 1], position_image[box[2,1], box[2,0], 2]])
+                distance1 = np.sqrt(np.square(box1_world[0] - box2_world[0]) + np.square(box1_world[1] - box2_world[1]) )
+                distance2 = np.sqrt(np.square(box2_world[0] - box3_world[0]) + np.square(box2_world[1] - box3_world[1]) )
+
+                #theta = np.arctan2(abs(box2_world[1] - box1_world[0]),abs(box2_world[0] - box1_world[0]))
+                theta = rectangle[2]
+
+                if theta < -45:
+                    theta = theta + 90
+
+                orientation_str = str(theta)
+
+                theta = theta * np.pi/180
+                #print("theta")
+                #print(theta)
+
+                if distance1 > distance2:
+                    temp = distance1
+                    distance1 = distance2
+                    distance2 = temp
+
+
+                if distance1 < 34:
+                    block_size_str = "small "
+                    #print("small block")
+                else:
+                    block_size_str = "large "
+                    #print("large block")
                 side_ratio = distance1/distance2
-            else:
-                side_ratio = distance2/distance1
-
-            if distance1 < 30 and distance2 < 30:
-                print("small block")
-            else:
-                print("large block")
-            print("side_ratio")
-            print(side_ratio)
+                #print("side_ratio")
+                #print(side_ratio)
 
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
+            cv2.putText(rgb_image, block_size_str + color[0] + orientation_str, (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
         #if len(rectangles) > 0 and camera_object.camera_calibrated:
         #    center = rectangles[0][0]

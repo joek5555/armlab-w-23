@@ -72,8 +72,8 @@ class Camera():
         self.block_contours = np.array([])
         self.block_detections = np.array([])
 
-        self.red_threshold = np.array([[167,4], [111,255], [41,255]], dtype= np.float32)
-        self.orange_threshold = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
+        self.red_threshold = np.array([[165,7], [108,255], [38,255]], dtype= np.float32)
+        self.orange_threshold = np.array([[7,14], [120,255], [47,255]], dtype= np.float32)
         self.yellow_threshold = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
         self.green_threshold = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
         self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
