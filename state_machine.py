@@ -101,6 +101,17 @@ class StateMachine():
         if self.next_state == "record_gripper_close":
             self.record_gripper_close()
 
+        if self.next_state == "pick_sort_task":
+            self.pick_sort_task()
+        if self.next_state == "pick_stack_task":
+            self.pick_stack_task()
+        if self.next_state == "line_up_task":
+            self.line_up_task()
+        if self.next_state == "stack_colors_task":
+            self.stack_colors_task()
+        if self.next_state == "stack_high_task":
+            self.stack_high_task()
+
 
     """Functions run for each state"""
 
@@ -330,6 +341,84 @@ class StateMachine():
 
         self.next_state = "idle"
     
+
+    #######################################################
+    ################## Competition tasks ##################
+    #######################################################
+
+
+    def pick_sort_task(self):
+        small_block_starting_place = np.array([1,2,3])
+        large_block_starting_place = np.array([1,2,3])
+        small_block_offset = np.array([20, 0, 0])
+        large_block_offset = np.array([-12, 0, 0])
+        small_block_count = 0
+        large_block_count = 0
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to large_block_starting_place + large_block_count * large_block_offset
+                pass
+            else:
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to small_block_starting_place + small_block_count * large_block_offset
+                pass
+
+
+    def pick_stack_task(self):
+        small_block_starting_place = np.array([1,2,3])
+        large_block_starting_place = np.array([1,2,3])
+        small_block_offset = np.array([0, 0, 26])
+        large_block_offset = np.array([0, 0, 39])
+        small_block_count = 0
+        large_block_count = 0
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to large_block_starting_place + large_block_count * large_block_offset
+                pass
+            else:
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to small_block_starting_place + small_block_count * large_block_offset
+                pass
+
+    def line_up_task(self):
+        small_block_starting_place = np.array([1,2,3])
+        large_block_starting_place = np.array([1,2,3])
+        small_block_offset = np.array([20, 0, 0])
+        large_block_offset = np.array([-12, 0, 0])
+        small_block_count = 0
+        large_block_count = 0
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to large_block_starting_place + large_block_count * large_block_offset
+                pass
+            else:
+                # move to detected_block[0] with orientation detected_block[1]
+                # move to small_block_starting_place + small_block_count * large_block_offset
+                pass
+
+    def stack_colors_task(self):
+        pass
+
+    def stack_high_task(self):
+        pass
+
+
+    #######################################################
 
     """ TODO """
     def detect(self):

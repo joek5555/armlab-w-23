@@ -107,6 +107,13 @@ class Gui(QMainWindow):
         self.ui.btnUser8.clicked.connect(partial(nxt_if_arm_init, 'record_gripper_open'))
         self.ui.btnUser9.setText('Record Gripper Close')
         self.ui.btnUser9.clicked.connect(partial(nxt_if_arm_init, 'record_gripper_close'))
+
+        # tasks
+        self.ui.btn_pick_sort.clicked.connect(partial(nxt_if_arm_init, 'pick_sort_task'))
+        self.ui.btn_pick_stack.clicked.connect(partial(nxt_if_arm_init, 'pick_stack_task'))
+        self.ui.btn_line_up.clicked.connect(partial(nxt_if_arm_init, 'line_up_task'))
+        self.ui.btn_stack_colors.clicked.connect(partial(nxt_if_arm_init, 'stack_colors_task'))
+        self.ui.btn_stack_high.clicked.connect(partial(nxt_if_arm_init, 'stack_high_task'))
         
 
         # Sliders
