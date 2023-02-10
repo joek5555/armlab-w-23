@@ -226,13 +226,41 @@ class StateMachine():
             self.camera.extrinsic_matrix[0,3] = self.camera.extrinsic_matrix[0,3] * 1000
             self.camera.extrinsic_matrix[1,3] = self.camera.extrinsic_matrix[1,3] * 1000
             self.camera.extrinsic_matrix[2,3] = self.camera.extrinsic_matrix[2,3] * 1000
+
+            self.camera.extrinsic_inverse = np.linalg.inv(self.camera.extrinsic_matrix)
             
             print("Extrinsic Matrix")
             print(self.camera.extrinsic_matrix)
             print("inv Extrinsic Matrix")
-            print(np.linalg.inv(self.camera.extrinsic_matrix))
+            print(self.camera.extrinsic_inverse)
 
-            self.calibration_message= "Camera Calibrated with " + str(self.tag_camera_measurements) + " measurements"
+            self.calibration_message= "Calibrated with " + str(self.tag_camera_measurements) + " measures"
+
+
+            # find homography matrix
+
+            edge_points_world = np.array([[450,-125, 0],[-450,-125, 0],[-450, 425, 0], [450, 425, 0]]) # edge of board
+            #edge_points_world = np.array([[250,-25, 0],[-250,-25, 0],[-250, 275, 0], [250, 275, 0]]) # apriltags
+            u_min = 149
+            u_max = 1131
+            v_min = 60
+            v_max = 660
+            edge_points_pixel = np.zeros((4,2))
+            for i in range(4):
+                world_point = edge_points_world[i,:]
+                
+                world_point = np.append(world_point, 1)
+                camera_point = np.dot(self.camera.extrinsic_matrix, world_point)
+                z_camera_coord = camera_point[2]
+                pixel_point = np.dot(self.camera.intrinsic_matrix, camera_point[0:3])
+                edge_points_pixel[i,0] =  pixel_point[0] / z_camera_coord
+                edge_points_pixel[i,1] =  pixel_point[1] / z_camera_coord
+
+            remap_points_pixel = np.array([[u_max,v_max],[u_min,v_max],[u_min, v_min], [u_max, v_min]])
+
+            self.camera.homography_matrix = cv2.findHomography(edge_points_pixel,remap_points_pixel)[0]
+
+
             self.camera.camera_calibrated = True
 
         self.tag_camera_pose = [0,0,0,0]

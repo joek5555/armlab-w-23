@@ -14,6 +14,7 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import CameraInfo
 from apriltag_ros.msg import *
 from cv_bridge import CvBridge, CvBridgeError
+from block_detection import DetectBlocks
 
 
 class Camera():
@@ -27,6 +28,7 @@ class Camera():
         """
         self.VideoFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.GridFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
+        self.DetectionFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.TagImageFrame = np.zeros((720, 1280, 3)).astype(np.uint8)
         self.DepthFrameRaw = np.zeros((720, 1280)).astype(np.uint16)
         """ Extra arrays for colormaping the depth image"""
@@ -37,9 +39,13 @@ class Camera():
         self.camera_calibrated = False
         #self.intrinsic_matrix = np.eye(3)
         self.intrinsic_matrix = np.array([(896.861, 0, 660.523), (0, 897.203, 381.419), (0, 0, 1)]) # factory
+        self.intrinsic_inverse = np.linalg.inv(self.intrinsic_matrix)
         #self.intrinsic_matrix = np.array([(905.8, 0, 668.8), (0, 911.7, 376.8), (0, 0, 1)]) # calibrated
         #self.intrinsic_matrix = np.array([(913.4, 0, 673.0), (0, 917.4, 377.7), (0, 0, 1)]) # calibrated
         self.extrinsic_matrix = np.eye(4)
+        self.extrinsic_inverse = np.eye(4)
+        self.homography_matrix = np.eye(3)
+
         self.last_click = np.array([0, 0])
         self.new_click = False
         self.rgb_click_points = np.zeros((5, 2), int)
@@ -54,9 +60,10 @@ class Camera():
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
 
         self.z_offset = -13  # amount to add to all z measurements before calibration
-        self.z_b = 6.75 # z = my + b, where y is y world value
-        self.z_m = -0.05
-
+        self.z_b = 8.75 # z = my + b, where y is y world value
+        self.z_m = -0.04
+        # b was 6.75
+        # m was -0.05
         
         
 
@@ -66,13 +73,50 @@ class Camera():
         self.block_contours = np.array([])
         self.block_detections = np.array([])
 
+        self.red_threshold = np.array([[165,4], [108,255], [38,255]], dtype= np.float32)
+        self.orange_threshold = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
+        self.yellow_threshold = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
+        self.green_threshold = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
+        self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
+        self.purple_threshold = np.array([[110, 157], [48, 255], [30,255]], dtype= np.float32)
+        # (color_str, color_BGR, color_threshold)
+        self.colors = [("red", (255, 0, 0), self.red_threshold, 0), 
+                        ("orange", (255, 165, 0), self.orange_threshold, 1), 
+                        ("yellow", (255, 255, 0), self.yellow_threshold, 2), 
+                        ("green", (0, 255, 0), self.green_threshold, 3), 
+                        ("blue", (0,0,255), self.blue_threshold, 4), 
+                        ("purple", (160, 32, 240), self.purple_threshold, 5)]
+
+        self.xy_threshold = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
+        self.erosion_kernel_size = 1
+        self.erosion_kernel_shape = 0 # 0 is rectangle
+        self.dilation_kernel_size = 1
+        self.dilation_kernel_shape = 0 # 0 is rectangle
+        self.morphological_constraints = np.array([self.erosion_kernel_size, self.erosion_kernel_shape, self.dilation_kernel_size, self.dilation_kernel_shape])
+        self.min_pixels_for_rectangle = 10
+        self.contour_constraints = np.array([self.min_pixels_for_rectangle])
+
+        # self.pixel_grid stores a [921600, 3, 1] array, where each position on axis 0 is a pizel location,
+        # and each element on axis 1 is the u,v,1 values at that position
+        self.pixel_grid = np.array(np.meshgrid(np.arange(0,1280,1), np.arange(0,720,1)))
+        self.pixel_grid = self.pixel_grid.transpose(2,1,0)
+        self.pixel_grid = self.pixel_grid.reshape(-1,2,1)
+        self.pixel_grid = np.concatenate((self.pixel_grid, np.ones((921600, 1, 1))), axis = 1)
+
+        self.world_correction_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, self.z_m, 1, self.z_b]])
+
+        self.position_image = np.zeros((720,1280,3))
+
+        # detected block = [(x,y,z), theta, size_str, color_num]
+        self.detected_blocks = []
+
 
     def pixel2World(self, pixel_coord):
 
         z = self.DepthFrameRaw[pixel_coord[1,0]][pixel_coord[0,0]] + self.z_offset
         camera_coord = np.ones([4,1])
-        camera_coord[0:3,:] = np.dot((z),np.dot(np.linalg.inv(self.intrinsic_matrix), pixel_coord))  
-        world_coord = np.dot(np.linalg.inv(self.extrinsic_matrix), camera_coord)
+        camera_coord[0:3,:] = np.dot((z),np.dot(self.intrinsic_inverse, pixel_coord))  
+        world_coord = np.dot(self.extrinsic_inverse, camera_coord)
         world_coord[2,0] = world_coord[2,0]  + self.z_m * world_coord[1,0] + self.z_b
         return world_coord
 
@@ -133,6 +177,21 @@ class Camera():
 
         try:
             frame = cv2.resize(self.GridFrame, (1280, 720))
+            img = QImage(frame, frame.shape[1], frame.shape[0],
+                         QImage.Format_RGB888)
+            return img
+        except:
+            return None
+
+    def convertQtDetectionFrame(self):
+        """!
+        @brief      Converts frame to format suitable for Qt
+
+        @return     QImage
+        """
+
+        try:
+            frame = cv2.resize(self.DetectionFrame, (1280, 720))
             img = QImage(frame, frame.shape[1], frame.shape[0],
                          QImage.Format_RGB888)
             return img
@@ -221,23 +280,7 @@ class Camera():
         
         if self.camera_calibrated:
 
-            #edge_points_world = np.array([[450,-125, -10],[-450,-125, -10],[-450, 425, 10], [450, 425, 10]])
-            edge_points_world = np.array([[250,-25, -10],[-250,-25, -10],[-250, 275, 10], [250, 275, 10]])
-            edge_points_pixel = np.zeros((4,2))
-            for i in range(4):
-                world_point = edge_points_world[i,:]
-                
-                world_point = np.append(world_point, 1)
-                camera_point = np.dot(self.extrinsic_matrix, world_point)
-                pixel_point = np.dot(self.intrinsic_matrix ,np.delete(camera_point, -1))
-                z = self.DepthFrameRaw[world_point[1]][world_point[0]] + self.z_offset
-                edge_points_pixel[i,0] =  pixel_point[0] / z
-                edge_points_pixel[i,1] =  pixel_point[1] / z
-
-            remap_points_pixel = np.array([[890,510],[390,510],[390, 210], [890, 210]])
-
-            H = cv2.findHomography(edge_points_pixel,remap_points_pixel)[0]
-            #self.GridFrame = cv2.warpPerspective(self.GridFrame, H, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
+            
             #H = cv2.findAffine(edge_points_pixel[],remap_points_pixel)[0]
             
 
@@ -247,6 +290,21 @@ class Camera():
             #print(grid_pixel_coord.shape)
             for i in range(np.shape(grid_pixel_coord)[1]):
                 cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
+
+            self.GridFrame = cv2.warpPerspective(self.GridFrame, self.homography_matrix, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
+
+    def BlockDetection(self):
+        #self.DetectionFrame = self.VideoFrame.copy()
+        rgb_image = self.VideoFrame.copy()
+        depth_image = self.DepthFrameRaw.copy()
+
+        rgb_image, self.detected_blocks = DetectBlocks(rgb_image, depth_image, self)
+
+        
+        #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)
+        #mask_image = np.stack((mask, np.zeros_like(mask), np.zeros_like(mask)), axis = 2)
+        self.DetectionFrame = rgb_image
+
 
         
 
@@ -324,7 +382,7 @@ class DepthListener:
 
 
 class VideoThread(QThread):
-    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage)
+    updateFrame = pyqtSignal(QImage, QImage, QImage, QImage, QImage)
 
     def __init__(self, camera, parent=None):
         QThread.__init__(self, parent=parent)
@@ -355,9 +413,11 @@ class VideoThread(QThread):
             tag_frame = self.camera.convertQtTagImageFrame()
             self.camera.projectGridInRGBImage()
             grid_frame = self.camera.convertQtGridFrame()
+            self.camera.BlockDetection()
+            detection_frame = self.camera.convertQtDetectionFrame()
             if ((rgb_frame != None) & (depth_frame != None)):
                 self.updateFrame.emit(
-                    rgb_frame, depth_frame, tag_frame, grid_frame)
+                    rgb_frame, depth_frame, tag_frame, grid_frame, detection_frame)
             time.sleep(0.03)
             if __name__ == '__main__':
                 cv2.imshow(
@@ -369,6 +429,8 @@ class VideoThread(QThread):
                     cv2.cvtColor(self.camera.TagImageFrame, cv2.COLOR_RGB2BGR))
                 cv2.imshow("Grid window",
                     cv2.cvtColor(self.camera.GridFrame, cv2.COLOR_RGB2BGR))
+                cv2.imshow("Detection window",
+                    cv2.cvtColor(self.camera.DetectionFrame, cv2.COLOR_RGB2BGR))
                 cv2.waitKey(3)
                 time.sleep(0.03)
 
