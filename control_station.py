@@ -316,13 +316,13 @@ class Gui(QMainWindow):
                     self.ui.pick_place_pose.setText("Picking at (%.0f,%.0f,%.0f)" %
                                                     (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
                     self.ui.pick_place_message.setText("Wait to finish moving")
-                    # self.sm.pick()
+                    self.sm.pick(world_coord)
                     self.ui.pick_place_message.setText("Please select a place to place")
                 else:
                     self.ui.pick_place_pose.setText("Placing at (%.0f,%.0f,%.0f)" %
                                                     (world_coord[0,0], world_coord[1,0], world_coord[2,0]))
                     self.ui.pick_place_message.setText("Wait to finish moving")
-                    # self.sm.pick()
+                    self.sm.pick(world_coord)
                     self.ui.pick_place_message.setText("Please select a place to pick")
             else:
                 self.ui.pick_place_pose.setText("Failed to move to (%.0f,%.0f,%.0f)" %

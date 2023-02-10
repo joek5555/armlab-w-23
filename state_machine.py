@@ -7,6 +7,7 @@ import numpy as np
 import rospy
 from apriltag_ros.msg import AprilTagDetectionArray # jk edit
 import cv2
+import kinematics
 #from rxarm import (set_positions)
 
 class StateMachine():
@@ -362,13 +363,29 @@ class StateMachine():
                     print()
                     rospy.sleep(0.1)
 
+        self.next_state = "idle"
 
-            
-            
+    
+    def pick(self, xyz_coord, angle=0, is_big = True):
+        #is_big = False
 
+        x = xyz_coord[0,0]
+        y = xyz_coord[1,0]
+        z = xyz_coord[2,0]
+        if self.picked_block:
+            valid_place = kinematics.place_block(x, y, z, self, is_big)
+            if valid_place:
+                print("Block plaaced")
+            else:
+                print("Failed(place)")
+        else:
+            valid_pick = kinematics.pick_block(x, y, z, angle, self,is_big)
+            if valid_pick:
+                print("Block picked")
+            else:
+                print("Failed(pick)")
 
         self.next_state = "idle"
-    
 
     #######################################################
     ################## Competition tasks ##################
