@@ -101,6 +101,17 @@ class StateMachine():
         if self.next_state == "record_gripper_close":
             self.record_gripper_close()
 
+        if self.next_state == "pick_sort_task":
+            self.pick_sort_task()
+        if self.next_state == "pick_stack_task":
+            self.pick_stack_task()
+        if self.next_state == "line_up_task":
+            self.line_up_task()
+        if self.next_state == "stack_colors_task":
+            self.stack_colors_task()
+        if self.next_state == "stack_high_task":
+            self.stack_high_task()
+
 
     """Functions run for each state"""
 
@@ -358,6 +369,161 @@ class StateMachine():
 
         self.next_state = "idle"
     
+
+    #######################################################
+    ################## Competition tasks ##################
+    #######################################################
+
+    # go_to(x, y, z, from_top, self, angle = np.pi/2, sleep_time = 4)
+    # pick(x, y, z, angle)
+    # detected block = [(x,y,z), theta, size_str, color_num]
+
+    def pick_sort_task(self):
+        print("Running task pick sort")
+        small_block_starting_place = np.array([75,-100,3])
+        large_block_starting_place = np.array([-75,-100,3])
+        small_block_x_offset = np.array([-(20+26), 0, 0])
+        large_block_x_offset = np.array([12+38, 0, 0])
+        small_block_z_offset = np.array([0, 0, 26])
+        large_block_z_offset = np.array([0, 0, 39])
+        small_block_count = 0
+        large_block_count = 0
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                if large_block_count > 9:
+                    print("error: cannot place more than 9 large blocks")
+                else:
+                    if large_block_count < 6:
+                        place_xyz = large_block_starting_place + large_block_x_offset * large_block_count
+                    else:
+                        place_xyz = large_block_starting_place + large_block_x_offset * (large_block_count - 3) + large_block_z_offset
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    # place(place_xyz[0], place_xyz[1], place_xyz[2], np.pi/2)
+                    large_block_count = large_block_count +1
+
+            else:
+                if small_block_count > 9:
+                    print("error: cannot place more than 9 small blocks")
+                else:
+                    if small_block_count < 6:
+                        place_xyz = small_block_starting_place + small_block_x_offset * small_block_count
+                    else:
+                        place_xyz = small_block_starting_place + small_block_x_offset * (small_block_count - 3) + small_block_z_offset
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
+                    small_block_count = small_block_count +1
+        
+        self.next_state = "idle"
+                
+
+
+    def pick_stack_task(self):
+        print("Running task pick stack")
+        small_block_starting_place = np.array([400,-75,0])
+        large_block_starting_place = np.array([-400,-75,0])
+        small_block_z_offset = np.array([0, 0, 26])
+        large_block_z_offset = np.array([0, 0, 39])
+        small_block_count = 0
+        large_block_count = 0
+        max_large_tower_height = 9
+        max_small_tower_height = 9
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                
+                if large_block_count > max_large_tower_height:
+                    print("error: cannot stack more blocks")
+                else:
+                    place_xyz = large_block_starting_place + large_block_z_offset * large_block_count
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    # place(place_xyz[0], place_xyz[1], place_xyz[2], np.pi/2)
+                    large_block_count = large_block_count +1
+
+            else:
+                
+                if small_block_count > max_small_tower_height:
+                    print("error: cannot stack more blocks")
+                else:
+                    place_xyz = small_block_starting_place + small_block_z_offset * small_block_count 
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
+                small_block_count = small_block_count +1
+        
+        self.next_state = "idle"
+
+    def line_up_task(self):
+        print("Running task line up")
+        #small_block_starting_place = np.array([75,-100,3])
+        #large_block_starting_place = np.array([-75,-100,3])
+        #small_block_offset = np.array([-(20+26), 0, 0])
+        #large_block_offset = np.array([12+38, 0, 0])
+        small_block_count = 0
+        large_block_count = 0
+
+        place_location_large_ROYGBV = []
+        place_location_small_ROYGBV = []
+        large_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
+        small_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
+
+        while self.camera.detected_blocks:
+            detected_block = self.camera.detected_blocks[0]
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                if large_blocks_placed_ROYGBV[detected_block[3]]:
+                    print("error: already placed a large block of color")
+                    print(detected_block[3])
+                else:
+                    place_xyz = place_location_large_ROYGBV[detected_block[3]]
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    large_blocks_placed_ROYGBV[detected_block[3]] = 1
+                
+            else:
+                if large_blocks_placed_ROYGBV[detected_block[3]]:
+                    print("error: already placed a small block of color")
+                    print(detected_block[3])
+                else:
+                    place_xyz = place_location_small_ROYGBV[detected_block[3]]
+                    # move to detected_block[0] with orientation detected_block[1]
+                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    # move to small_block_starting_place + small_block_count * large_block_offset
+                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
+                    small_blocks_placed_ROYGBV[detected_block[3]] = 1
+
+        self.next_state = "idle"
+                
+
+    def stack_colors_task(self):
+        print("Running task stack colors")
+
+
+        self.next_state = "idle"
+        
+
+    def stack_high_task(self):
+        print("Running task stack high")
+
+        self.next_state = "idle"
+
+
+    #######################################################
 
     """ TODO """
     def detect(self):
