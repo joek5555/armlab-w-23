@@ -351,6 +351,7 @@ class StateMachine():
     # detected block = [(x,y,z), theta, size_str, color_num]
 
     def pick_sort_task(self):
+        print("Running task pick sort")
         small_block_starting_place = np.array([75,-100,3])
         large_block_starting_place = np.array([-75,-100,3])
         small_block_x_offset = np.array([-(20+26), 0, 0])
@@ -391,10 +392,13 @@ class StateMachine():
                     # move to large_block_starting_place + large_block_count * large_block_offset
                     # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
                     small_block_count = small_block_count +1
+        
+        self.next_state = "idle"
                 
 
 
     def pick_stack_task(self):
+        print("Running task pick stack")
         small_block_starting_place = np.array([400,-75,0])
         large_block_starting_place = np.array([-400,-75,0])
         small_block_z_offset = np.array([0, 0, 26])
@@ -431,8 +435,11 @@ class StateMachine():
                     # move to large_block_starting_place + large_block_count * large_block_offset
                     # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
                 small_block_count = small_block_count +1
+        
+        self.next_state = "idle"
 
     def line_up_task(self):
+        print("Running task line up")
         #small_block_starting_place = np.array([75,-100,3])
         #large_block_starting_place = np.array([-75,-100,3])
         #small_block_offset = np.array([-(20+26), 0, 0])
@@ -471,13 +478,21 @@ class StateMachine():
                     # move to small_block_starting_place + small_block_count * large_block_offset
                     # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
                     small_blocks_placed_ROYGBV[detected_block[3]] = 1
+
+        self.next_state = "idle"
                 
 
     def stack_colors_task(self):
-        pass
+        print("Running task stack colors")
+
+
+        self.next_state = "idle"
+        
 
     def stack_high_task(self):
-        pass
+        print("Running task stack high")
+
+        self.next_state = "idle"
 
 
     #######################################################
