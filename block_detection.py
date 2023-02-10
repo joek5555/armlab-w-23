@@ -170,7 +170,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                     distance2 = temp
 
 
-                if distance1 < 34:
+                if distance1 < 35:
                     block_size_str = "small "
                     #print("small block")
                 else:
@@ -184,7 +184,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 detected_objects.append(detected_object)
 
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, block_size_str + color[0] + orientation_str, (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
+            cv2.putText(rgb_image, block_size_str + color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
         #if len(rectangles) > 0 and camera_object.camera_calibrated:
         #    center = rectangles[0][0]
@@ -194,6 +194,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
             #print(rectangle_world_coord)
 
     sorted(detected_objects, key= SortDetectedObjectsFunction)
+    #print(detected_objects)
 
     return rgb_image, detected_objects
     
