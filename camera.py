@@ -79,12 +79,12 @@ class Camera():
         self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
         self.purple_threshold = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
         # (color_str, color_BGR, color_threshold)
-        self.colors = [("red", (255, 0, 0), self.red_threshold), 
-                        ("orange", (255, 165, 0), self.orange_threshold), 
-                        ("yellow", (255, 255, 0), self.yellow_threshold), 
-                        ("green", (0, 255, 0), self.green_threshold), 
-                        ("blue", (0,0,255), self.blue_threshold), 
-                        ("purple", (160, 32, 240), self.purple_threshold)]
+        self.colors = [("red", (255, 0, 0), self.red_threshold, 0), 
+                        ("orange", (255, 165, 0), self.orange_threshold, 1), 
+                        ("yellow", (255, 255, 0), self.yellow_threshold, 2), 
+                        ("green", (0, 255, 0), self.green_threshold, 3), 
+                        ("blue", (0,0,255), self.blue_threshold, 4), 
+                        ("purple", (160, 32, 240), self.purple_threshold, 5)]
 
         self.xy_threshold = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
         self.erosion_kernel_size = 1
@@ -105,6 +105,9 @@ class Camera():
         self.world_correction_matrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, self.z_m, 1, self.z_b]])
 
         self.position_image = np.zeros((720,1280,3))
+
+        # detected block = [(x,y,z), theta, size_str, color_num]
+        self.detected_blocks = []
 
 
     def pixel2World(self, pixel_coord):
@@ -292,7 +295,7 @@ class Camera():
         rgb_image = self.VideoFrame.copy()
         depth_image = self.DepthFrameRaw.copy()
 
-        rgb_image, contours, rectangles = DetectBlocks(rgb_image, depth_image, self)
+        rgb_image, self.detected_blocks = DetectBlocks(rgb_image, depth_image, self)
 
         
         #self.DetectionFrame = cv2.bitwise_and(hsv_image, hsv_image, mask = image)

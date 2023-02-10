@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
 
+def SortDetectedObjectsFunction(detected_object):
+    x = detected_object[0][0]
+    y = detected_object[0][1]
+    return np.sqrt(np.square(x) + np.square(y))
+
 
 def Depth2Position(depth_image, camera_object):
     """
@@ -105,6 +110,7 @@ def FindContours(image, contour_constraints):
 def DetectBlocks(rgb_image, depth_image, camera_object):
     """
     """
+    detected_objects = []
     bgr_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
     hsv_image = cv2.cvtColor(bgr_image_cv, cv2.COLOR_BGR2HSV)
 
@@ -139,7 +145,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
 
             if camera_calibrated and box[0,0] < 1280 and box[1,0] < 1280 and box[2,0] < 1280 and box[3,0] < 1280 and box[0,1] < 720 and box[1,1] < 720 and box[2,1] < 720 and box[3,1] < 720:
 
-
+                center_world = np.array([position_image[center[1], center[0], 0], position_image[center[1], center[0], 1], position_image[center[1], center[0], 2]])
                 box1_world = np.array([position_image[box[0,1], box[0,0], 0], position_image[box[0,1], box[0,0], 1], position_image[box[0,1], box[0,0], 2]])
                 box2_world = np.array([position_image[box[1,1], box[1,0], 0], position_image[box[1,1], box[1,0], 1], position_image[box[1,1], box[1,0], 2]])
                 box3_world = np.array([position_image[box[2,1], box[2,0], 0], position_image[box[2,1], box[2,0], 1], position_image[box[2,1], box[2,0], 2]])
@@ -174,6 +180,9 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 #print("side_ratio")
                 #print(side_ratio)
 
+                detected_object = [center_world, theta, block_size_str, color[3]]
+                detected_objects.append(detected_object)
+
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
             cv2.putText(rgb_image, block_size_str + color[0] + orientation_str, (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
@@ -183,5 +192,8 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
         #    rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
         #    rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
             #print(rectangle_world_coord)
-    return rgb_image, contours, rectangles
+
+    sorted(detected_objects, key= SortDetectedObjectsFunction)
+
+    return rgb_image, detected_objects
     
