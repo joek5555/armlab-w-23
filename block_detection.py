@@ -133,6 +133,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
             if camera_calibrated and distance_threshold_bool:
                 center = np.array([rectangle[0][0], rectangle[0][1]])
                 center = center.astype(int)
+                hsv_v_at_center = hsv_image(center[0], center[1], 2)
                 #rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
                 #rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
                 #rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
@@ -140,17 +141,23 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                                                 camera_object.position_image[center[1], center[0], 1],
                                                 camera_object.position_image[center[1], center[0], 2] ])
 
-                z_low = center_world[2] - camera_object.rectangle_z_offset
-                z_high = center_world[2] + camera_object.rectangle_z_offset   
+                #z_low = center_world[2] - camera_object.rectangle_z_offset
+                #z_high = center_world[2] + camera_object.rectangle_z_offset   
                 x_low = center_world[0] - camera_object.rectangle_xy_offset
                 x_high = center_world[0] + camera_object.rectangle_xy_offset
                 y_low = center_world[1] - camera_object.rectangle_xy_offset
                 y_high = center_world[1] + camera_object.rectangle_xy_offset
                 
-                new_position_threshold = np.array([[x_low, x_high], [y_low, y_high], [z_low,z_high]], dtype= np.float32)
+                new_position_threshold = np.array([[x_low, x_high], [y_low, y_high], [-5000,5000]], dtype= np.float32)
                 #print(new_position_threshold)
                 new_position_mask = PositionThreshold(position_image, new_position_threshold)  
-                new_mask = cv2.bitwise_and(morphological_mask, new_position_mask) 
+                new_hsv_threshold = np.array([[color[2][0,:]], [color[2][1,:]], [hsv_v_at_center - 15 , 255]], dtype= np.float32)
+                new_hsv_mask = HSVThreshold(hsv_image, new_hsv_threshold)
+
+                new_mask = cv2.bitwise_and(new_hsv_mask, new_position_mask) 
+
+                new_morphological_mask = Morphological(new_mask, camera_object.morphological_constraints)
+        
                 #new_mask = new_position_mask
                 ###
                 #new_mask_image = new_mask * 255
@@ -158,7 +165,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 #new_mask_image = np.broadcast_to(new_mask_image, (720, 1280, 3))
                 #rgb_image = new_mask_image
                 ###
-                new_rectangles = FindBoundingRectangles(new_mask, camera_object.contour_constraints)
+                new_rectangles = FindBoundingRectangles(new_morphological_mask, camera_object.contour_constraints)
                 if len(new_rectangles) < 1:
                     print("Error: no rectangles detected")
                 elif len(new_rectangles) > 1: # if there is more than one rectangle, pick rectangle with largest length and width
