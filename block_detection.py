@@ -4,7 +4,7 @@ import cv2
 def SortDetectedObjectsFunction(detected_object):
     x = detected_object[0][0]
     y = detected_object[0][1]
-    return np.sqrt(np.square(x) + np.square(y))
+    return np.sqrt(x*x + y*y)
 
 
 def Depth2Position(depth_image, camera_object):
@@ -170,7 +170,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                     distance2 = temp
 
 
-                if distance1 < 37:
+                if distance1 < 33:
                     block_size_str = "small"
                     #print("small block")
                 else:
@@ -201,8 +201,7 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
         #    rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
             #print(rectangle_world_coord)
 
-    sorted(detected_objects, key= SortDetectedObjectsFunction)
-    #print(detected_objects)
+    detected_objects.sort(key= SortDetectedObjectsFunction)
 
     return rgb_image, detected_objects
     

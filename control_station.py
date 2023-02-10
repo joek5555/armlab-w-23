@@ -104,6 +104,7 @@ class Gui(QMainWindow):
             lambda: self.rxarm.disable_torque())
         self.ui.btn_torq_on.clicked.connect(lambda: self.rxarm.enable_torque())
         self.ui.btn_sleep_arm.clicked.connect(lambda: self.rxarm.sleep())
+        #self.ui.btn_sleep_arm.clicked.connect(partial(nxt_if_arm_init, 'idle'))
 
         #User Buttons
         self.ui.btnUser1.setText("Calibrate")

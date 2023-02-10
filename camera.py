@@ -87,7 +87,7 @@ class Camera():
                         ("blue", (0,0,255), self.blue_threshold, 4), 
                         ("purple", (160, 32, 240), self.purple_threshold, 5)]
 
-        self.xy_threshold = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
+        self.xy_threshold = np.array([[-500, 500], [-10, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
         self.erosion_kernel_size = 1
         self.erosion_kernel_shape = 0 # 0 is rectangle
         self.dilation_kernel_size = 1

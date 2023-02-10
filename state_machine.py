@@ -393,20 +393,30 @@ class StateMachine():
 
     # go_to(x, y, z, from_top, self, angle = np.pi/2, sleep_time = 4)
     # pick(x, y, z, angle)
+    # pick_block(x, y, z, angle, self, is_big = True)
     # detected block = [(x,y,z), theta, size_str, color_num]
+    # place_block(x, y, z, self, is_big, angle = np.pi/2)
 
     def pick_sort_task(self):
+
+        self.current_state = "pick_sort_task"
+
         print("Running task pick sort")
-        small_block_starting_place = np.array([75,-100,3])
-        large_block_starting_place = np.array([-75,-100,3])
-        small_block_x_offset = np.array([-(20+26), 0, 0])
-        large_block_x_offset = np.array([12+38, 0, 0])
+        small_block_starting_place = np.array([-350,-100,3])
+        large_block_starting_place = np.array([350,-100,3])
+        small_block_x_offset = np.array([50, 0, 0])
+        large_block_x_offset = np.array([-50, 0, 0])
         small_block_z_offset = np.array([0, 0, 26])
         large_block_z_offset = np.array([0, 0, 39])
         small_block_count = 0
         large_block_count = 0
 
+        initial_position = np.array([0.0, -1.5708, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(5)
+
         while self.camera.detected_blocks:
+            print(self.camera.detected_blocks)
             detected_block = self.camera.detected_blocks[0]
 
             # move to detected block, pick
@@ -419,9 +429,9 @@ class StateMachine():
                     else:
                         place_xyz = large_block_starting_place + large_block_x_offset * (large_block_count - 3) + large_block_z_offset
                     # move to detected_block[0] with orientation detected_block[1]
-                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    # place(place_xyz[0], place_xyz[1], place_xyz[2], np.pi/2)
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
                     large_block_count = large_block_count +1
 
             else:
@@ -433,9 +443,12 @@ class StateMachine():
                     else:
                         place_xyz = small_block_starting_place + small_block_x_offset * (small_block_count - 3) + small_block_z_offset
                     # move to detected_block[0] with orientation detected_block[1]
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
                     # move to large_block_starting_place + large_block_count * large_block_offset
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
                     # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
+
                     small_block_count = small_block_count +1
         
         self.next_state = "idle"
