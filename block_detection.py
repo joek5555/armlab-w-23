@@ -170,21 +170,29 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                     distance2 = temp
 
 
-                if distance1 < 35:
-                    block_size_str = "small "
+                if distance1 < 37:
+                    block_size_str = "small"
                     #print("small block")
                 else:
-                    block_size_str = "large "
+                    block_size_str = "large"
                     #print("large block")
                 side_ratio = distance1/distance2
                 #print("side_ratio")
                 #print(side_ratio)
 
+                #if side_ratio < 0.61:
+                #    block_size_str = "arch"
+                #if center_world[2] < 16:
+                #    block_size_str = "curve"
+
+
                 detected_object = [center_world, theta, block_size_str, color[3]]
-                detected_objects.append(detected_object)
+
+                if block_size_str == "large" or block_size_str == "small":
+                    detected_objects.append(detected_object)
 
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, block_size_str + color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
+            cv2.putText(rgb_image, block_size_str + ", " + color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
         #if len(rectangles) > 0 and camera_object.camera_calibrated:
         #    center = rectangles[0][0]

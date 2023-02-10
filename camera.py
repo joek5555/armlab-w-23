@@ -60,9 +60,10 @@ class Camera():
                                       np.ravel(self.grid_points[2,:,:]), np.ravel(self.grid_points[3,:,:])])
 
         self.z_offset = -13  # amount to add to all z measurements before calibration
-        self.z_b = 6.75 # z = my + b, where y is y world value
-        self.z_m = -0.05
-
+        self.z_b = 8.75 # z = my + b, where y is y world value
+        self.z_m = -0.04
+        # b was 6.75
+        # m was -0.05
         
         
 
