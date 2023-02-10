@@ -2,6 +2,11 @@ import numpy as np
 import cv2
 
 
+def SortDetectedObjectsFunction(detected_object):
+    x = detected_object[0][0]
+    y = detected_object[0][1]
+    return np.sqrt(np.square(x) + np.square(y))
+
 def Depth2Position(depth_image, camera_object):
     """
     Create an array containing the xyz position of each pixel
@@ -105,6 +110,7 @@ def FindBoundingRectangles(image, contour_constraints):
 def DetectBlocks(rgb_image, depth_image, camera_object):
     """
     """
+    detected_objects = []
     distance_threshold_bool = True
     bgr_image_cv = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
     hsv_image = cv2.cvtColor(bgr_image_cv, cv2.COLOR_BGR2HSV)
@@ -130,10 +136,20 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
         #cv2.drawContours(rgb_image, contours, -1, (0,0,0) , 1)
         for rectangle in rectangles:
 
+            box = cv2.boxPoints(rectangle)
+            box = np.int0(box)
+            center = np.array([rectangle[0][0], rectangle[0][1]])
+            center = center.astype(int)
+
+            block_size_str = ""
+            orientation_str = ""
+
             if camera_calibrated and distance_threshold_bool:
                 center = np.array([rectangle[0][0], rectangle[0][1]])
                 center = center.astype(int)
-                hsv_v_at_center = hsv_image(center[0], center[1], 2)
+                hsv_s_at_center = hsv_image[center[1], center[0], 1]
+                hsv_v_at_center = hsv_image[center[1], center[0], 2]
+                print(hsv_v_at_center)
                 #rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
                 #rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
                 #rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
@@ -151,12 +167,26 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 new_position_threshold = np.array([[x_low, x_high], [y_low, y_high], [-5000,5000]], dtype= np.float32)
                 #print(new_position_threshold)
                 new_position_mask = PositionThreshold(position_image, new_position_threshold)  
-                new_hsv_threshold = np.array([[color[2][0,:]], [color[2][1,:]], [hsv_v_at_center - 15 , 255]], dtype= np.float32)
+                new_hsv_threshold = np.array([[color[2][0,0], color[2][0,1]], [color[2][1,0], color[2][1,1]], [hsv_v_at_center - 4 , color[2][2,1]]], dtype= np.float32)
                 new_hsv_mask = HSVThreshold(hsv_image, new_hsv_threshold)
 
                 new_mask = cv2.bitwise_and(new_hsv_mask, new_position_mask) 
 
-                new_morphological_mask = Morphological(new_mask, camera_object.morphological_constraints)
+#hsv_s_at_center - 10
+#color[2][1,0]
+
+                erosion_kernel_size = 1
+                erosion_kernel_shape = 0 # 0 is rectangle
+                dilation_kernel_size = 3
+                dilation_kernel_shape = 0 # 0 is rectangle
+                new_morphological_constraints = np.array([erosion_kernel_size, erosion_kernel_shape, dilation_kernel_size, dilation_kernel_shape])
+                new_morphological_mask = Morphological(new_mask, new_morphological_constraints)
+                
+                #rgb_image[:,:,0] = new_morphological_mask * 100
+                #rgb_image[:,:,1] = new_morphological_mask * 0
+                #rgb_image[:,:,2] = new_morphological_mask * 0
+
+                #print(np.count_nonzero(new_morphological_mask))
         
                 #new_mask = new_position_mask
                 ###
@@ -176,13 +206,61 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                             rectangle = new_rectangle
                 else:
                     rectangle = new_rectangles[0]
-                
-            box = cv2.boxPoints(rectangle)
-            box = np.int0(box)
-            center = np.array([rectangle[0][0], rectangle[0][1]])
-            center = center.astype(int)
-            cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
-            cv2.putText(rgb_image, color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
 
-    return rgb_image, rectangles
+                
+                
+                box = cv2.boxPoints(rectangle)
+                box = np.int0(box)
+                center = np.array([rectangle[0][0], rectangle[0][1]])
+                center = center.astype(int)
+
+                box1_world = np.array([position_image[box[0,1], box[0,0], 0], position_image[box[0,1], box[0,0], 1], position_image[box[0,1], box[0,0], 2]])
+                box2_world = np.array([position_image[box[1,1], box[1,0], 0], position_image[box[1,1], box[1,0], 1], position_image[box[1,1], box[1,0], 2]])
+                box3_world = np.array([position_image[box[2,1], box[2,0], 0], position_image[box[2,1], box[2,0], 1], position_image[box[2,1], box[2,0], 2]])
+                distance1 = np.sqrt(np.square(box1_world[0] - box2_world[0]) + np.square(box1_world[1] - box2_world[1]) )
+                distance2 = np.sqrt(np.square(box2_world[0] - box3_world[0]) + np.square(box2_world[1] - box3_world[1]) )
+
+                theta = rectangle[2]
+
+                if theta < -45:
+                    theta = theta + 90
+
+                orientation_str = str(theta)
+
+                theta = theta * np.pi/180
+                #print("theta")
+                #print(theta)
+
+                if distance1 > distance2:
+                    temp = distance1
+                    distance1 = distance2
+                    distance2 = temp
+
+
+                if distance1 < 36:
+                    block_size_str = "small "
+                    #print("small block")
+                else:
+                    block_size_str = "large "
+                    #print("large block")
+                side_ratio = distance1/distance2
+                #print("side_ratio")
+                #print(side_ratio)
+
+                detected_object = [center_world, theta, block_size_str, color[3]]
+                detected_objects.append(detected_object)
+
+            cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
+            cv2.putText(rgb_image, block_size_str + color[0] + orientation_str, (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)
+
+        #if len(rectangles) > 0 and camera_object.camera_calibrated:
+        #    center = rectangles[0][0]
+        #    rectangle_pixel_coord = np.array([[center[0]], [center[1]], [1]])
+        #    rectangle_pixel_coord = rectangle_pixel_coord.astype(int)
+        #    rectangle_world_coord = camera_object.pixel2World(rectangle_pixel_coord)
+            #print(rectangle_world_coord)
+
+    sorted(detected_objects, key= SortDetectedObjectsFunction)
+
+    return rgb_image, detected_objects
     
