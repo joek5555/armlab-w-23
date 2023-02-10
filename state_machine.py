@@ -326,73 +326,21 @@ class StateMachine():
 
         self.next_state = "idle"
 
-    '''
-    def pick(self, xyz_coord):
-        self.current_state = "pick"
+    
+    def pick(self, xyz_coord, angle=0, is_big = True):
+        #is_big = False
 
-        if self.picked_block:
-            world_coord_approach = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0] + 60, np.pi/2, np.pi,  0])
-            world_coord_pick = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0] + 10, np.pi/2, np.pi,  0])
-        else:
-            world_coord_approach = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0] + 20, np.pi/2, np.pi,  0])
-            world_coord_pick = np.array([xyz_coord[0,0], xyz_coord[1,0], xyz_coord[2,0] - 20, np.pi/2, np.pi,  0])
-
-        
-
-        #print("desired pose")
-        #print(world_coord)
-        joint_angles_approach = kinematics.IK_geometric(world_coord_approach)
-        desired_joint_angles_approach = kinematics.choose_joint_combination(joint_angles_approach)
-        print("Desired Joint angles approach:")
-        print(desired_joint_angles_approach)
-        if desired_joint_angles_approach[1] == -1000:
-            print("error: no valid joint combination")
-        else:
-            self.rxarm.set_positions(desired_joint_angles_approach) # move to approach
-            rospy.sleep(3)
-
-            joint_angles_pick = kinematics.IK_geometric(world_coord_pick)
-            desired_joint_angles_pick = kinematics.choose_joint_combination(joint_angles_pick)
-            print("Desired Joint angles pick:")
-            print(desired_joint_angles_pick)
-            if desired_joint_angles_pick[1] == -1000:
-                print("error: no valid joint combination")
-            else:
-                self.rxarm.set_positions(desired_joint_angles_pick) # move to pick
-                rospy.sleep(3)
-
-                if self.picked_block:              # open or close gripper
-                    self.rxarm.open_gripper()
-                    self.picked_block = False
-                else:
-                    self.rxarm.close_gripper()
-                    self.picked_block = True
-
-                self.rxarm.set_positions(desired_joint_angles_approach) # move to approach
-                rospy.sleep(3)
-                print("Desired Joint angles approach:")
-                print(desired_joint_angles_approach)
-
-        #print("Taught waypoint")
-        #print(self.taught_waypoints[-1])
-        #print("current joint angles")
-        #print(self.rxarm.get_positions())
-
-        self.next_state = "idle"
-    '''
-
-    def pick(self, xyz_coord, angle=0):
         x = xyz_coord[0,0]
         y = xyz_coord[1,0]
         z = xyz_coord[2,0]
         if self.picked_block:
-            valid_place = kinematics.place_block(x, y, z, False, self)
+            valid_place = kinematics.place_block(x, y, z, self, is_big)
             if valid_place:
                 print("Block plaaced")
             else:
                 print("Failed(place)")
         else:
-            valid_pick = kinematics.pick_block(x, y, z, angle, self)
+            valid_pick = kinematics.pick_block(x, y, z, angle, self,is_big)
             if valid_pick:
                 print("Block picked")
             else:

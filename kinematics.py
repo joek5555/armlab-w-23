@@ -14,10 +14,17 @@ import rospy
 
 import math
 
-pick_offset = -40
-place_offset = 20
+pick_offset_big = -35
+pick_offset_small = -20
+place_offset_big = 5
+place_offset_small = 5
 pick_approach_offset = 40
 place_approach_offset = 60
+
+sleep_time_top = 3
+sleep_time_side = 5
+sleep_time_base = 3
+sleep_time_approach = 2
 
 #data of arm in mm
 l1 = 103.91
@@ -425,8 +432,8 @@ def is_valid(desired_joint_combination):
     else:
         return True
 
-def can_pick_from_top(x, y, z):
-    z += pick_approach_offset
+def can_from_top(x, y, z, offset):
+    z += offset
     R = R_zyz(np.pi/2, np.pi,  0)
     xc = x - (l4+l5)*R[0,2]
     yc = y - (l4+l5)*R[1,2]
@@ -440,7 +447,7 @@ def can_pick_from_top(x, y, z):
     else:
         print("Pick from side")
         return False
-
+'''
 def choose_orientation_pick(x, y, z, angle):
     pick_from_top = False
     #print("Desired orientation:")
@@ -460,53 +467,71 @@ def choose_orientation_place(x, y, z, place_from_top, angle = np.pi/2):
         j1 = -np.arctan2(x,y)
         #print(j1+np.pi/2, "  ", np.pi/2, "  ", 0)
         return [j1+np.pi/2, np.pi/2, 0]
-
+'''
 def desired_joint_combination(pose):
     joint_combinations = IK_geometric(pose)
     desired_joint_combination = choose_joint_combination(joint_combinations)
     return desired_joint_combination
 
-def pick_block(x, y, z, angle, self):
-    sleep_time = 3
+def move_joint(joint_num, radian, current_pose, self, sleep_time_base = 0):
+    current_pose[joint_num] = radian
+    self.rxarm.set_positions(current_pose)
+    rospy.sleep(sleep_time_base)
+    return
+
+def go_to(pose, from_top, self, angle=np.pi/2, sleep_time = 4, sleep_time_base = 0):
+    x = pose[0]
+    y = pose[1]
+    z = pose[2]
+    if from_top:
+        pose = np.array([x, y, z, np.pi/2, np.pi, angle])
+        if is_valid(desired_joint_combination(pose)):
+            move_joint(0, desired_joint_combination(pose)[0], self.rxarm.get_positions(), self, sleep_time_base)
+            self.rxarm.set_positions(desired_joint_combination(pose))
+            rospy.sleep(sleep_time)
+            return True
+        else:
+            return False
+    else:
+        j1 = -np.arctan2(x,y)
+        pose = np.array([x, y, z, j1+np.pi/2, np.pi/2, 0])
+        if is_valid(desired_joint_combination(pose)):
+            move_joint(0, desired_joint_combination(pose)[0], self.rxarm.get_positions(), self, sleep_time_base)
+            self.rxarm.set_positions(desired_joint_combination(pose))
+            rospy.sleep(sleep_time)
+            return True
+        else:
+            return False
+
+def pick_block(x, y, z, angle, self, is_big = True):
     #prevent touching the plate
     if z < 10:
         z = 50
-    pick_from_top = can_pick_from_top(x,y,z)
-    ori = choose_orientation_pick(x, y, z+pick_approach_offset , angle)
-    pose_approach = np.array([x, y, z+pick_approach_offset, ori[0], ori[1], ori[2]])
-    desired_joint_combination_approach = desired_joint_combination(pose_approach)
-    if is_valid(desired_joint_combination_approach):
-        self.rxarm.set_positions(desired_joint_combination_approach)
-        rospy.sleep(sleep_time)
-        pose_pick = np.array([x, y, z+pick_offset, ori[0], ori[1], ori[2]])
-        desired_joint_combination_pick = desired_joint_combination(pose_pick)
-        if is_valid(desired_joint_combination_pick):
-            self.rxarm.set_positions(desired_joint_combination_pick)
-            rospy.sleep(sleep_time)
+    if is_big:
+        pick_offset = pick_offset_big
+    else:
+        pick_offset = pick_offset_small
+
+    pick_from_top = can_from_top(x,y,z, pick_approach_offset)
+    if pick_from_top:
+        sleep_time = sleep_time_top
+    else:
+        sleep_time = sleep_time_side
+
+    pose_approach = np.array([x, y, z+pick_approach_offset])
+    valid_approach = go_to(pose_approach, pick_from_top, self, angle,sleep_time, sleep_time_base)
+    if valid_approach:
+        pose_pick = np.array([x, y, z+pick_offset])
+        valid_pick = go_to(pose_pick, pick_from_top, self, angle, sleep_time_approach)
+        if valid_pick:
             self.rxarm.close_gripper()
             self.picked_block = True
-            self.rxarm.set_positions(desired_joint_combination_approach)
-            rospy.sleep(sleep_time)
+            go_to(pose_approach, pick_from_top, self, angle, sleep_time_approach)
+            move_joint(1, -np.pi/4, self.rxarm.get_positions(), self, sleep_time_base)
+            move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
             if pick_from_top == False:
-                self.rxarm.set_positions(np.array([0, 0, 0, 0, 0]))
-                rospy.sleep(sleep_time)
-                store_location = [350, -75]
-                j1 = -np.arctan2(store_location[0],store_location[1])
-                pose_ori = j1+np.pi/2
-                pose_store_approach = np.array([store_location[0], store_location[1], 100, pose_ori, ori[1], ori[2]])
-                pose_store = np.array([store_location[0], store_location[1], place_offset, pose_ori, ori[1], ori[2]])
-                desired_joint_combination_store_approach = desired_joint_combination(pose_store_approach)
-                desired_joint_combination_store = desired_joint_combination(pose_store)
-                self.rxarm.set_positions(desired_joint_combination_store_approach)
-                rospy.sleep(sleep_time)
-                self.rxarm.set_positions(desired_joint_combination_store)
-                rospy.sleep(sleep_time)
-                self.rxarm.open_gripper()
-                self.picked_block = False
-                self.rxarm.set_positions(desired_joint_combination_store_approach)
-                rospy.sleep(sleep_time)
-                self.rxarm.set_positions(np.array([0, 0, 0, 0, 0]))
-                rospy.sleep(sleep_time)
+                store_location = [300, -75, 0]
+                place_block(store_location[0], store_location[1], store_location[2],pick_from_top, self)
             return True
         else:
             print("Can't pick block")
@@ -515,28 +540,33 @@ def pick_block(x, y, z, angle, self):
         print("Can't approach block")
         return False
 
-def place_block(x, y, z, place_from_top, self, angle = np.pi/2):
-    sleep_time = 3
-    #prevent touching the plate
-    ori = choose_orientation_place(x, y, z+place_approach_offset, place_from_top)
-    pose_approach = np.array([x, y, z+place_approach_offset, ori[0], ori[1], ori[2]])
-    desired_joint_combination_approach = desired_joint_combination(pose_approach)
-    if is_valid(desired_joint_combination_approach):
-        self.rxarm.set_positions(desired_joint_combination_approach)
-        rospy.sleep(sleep_time)
-        pose_place = np.array([x, y, z + place_offset, ori[0], ori[1], ori[2]])
-        desired_joint_combination_place = desired_joint_combination(pose_place)
-        if is_valid(desired_joint_combination_place):
-            self.rxarm.set_positions(desired_joint_combination_place)
-            rospy.sleep(sleep_time)
+def place_block(x, y, z, self, is_big, angle = np.pi/2):
+    place_from_top = can_from_top(x,y,z, place_approach_offset)
+
+    if place_from_top:
+        sleep_time = sleep_time_top
+    else:
+        sleep_time = sleep_time_side
+    if is_big:
+        place_offset = place_offset_big
+    else:
+        place_offset = place_offset_small
+
+    pose_approach = np.array([x, y, z+place_approach_offset])
+    valid_approach = go_to(pose_approach, place_from_top, self, angle, sleep_time, sleep_time_base)
+    if valid_approach:
+        pose_place = np.array([x, y, z+place_offset])
+        valid_place = go_to(pose_place, place_from_top, self, angle, sleep_time_approach)
+        if valid_place:
             self.rxarm.open_gripper()
             self.picked_block = False
-            self.rxarm.set_positions(desired_joint_combination_approach)
-            rospy.sleep(sleep_time)
+            go_to(pose_approach, place_from_top, self, angle, sleep_time_approach)
+            move_joint(1, -np.pi/4, self.rxarm.get_positions(), self, sleep_time_base)
+            move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
             return True
         else:
             print("Can't place block")
             return False
     else:
-        print("Can't approach block")
+        print("Can't approach block(place)")
         return False
