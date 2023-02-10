@@ -78,7 +78,7 @@ class Camera():
         self.yellow_threshold = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
         self.green_threshold = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
         self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
-        self.purple_threshold = np.array([[110, 157], [44, 255], [22,255]], dtype= np.float32)
+        self.purple_threshold = np.array([[110, 157], [48, 255], [30,255]], dtype= np.float32)
         # (color_str, color_BGR, color_threshold)
         self.colors = [("red", (255, 0, 0), self.red_threshold, 0), 
                         ("orange", (255, 165, 0), self.orange_threshold, 1), 
@@ -280,7 +280,7 @@ class Camera():
         
         if self.camera_calibrated:
 
-            self.GridFrame = cv2.warpPerspective(self.GridFrame, self.homography_matrix, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
+            
             #H = cv2.findAffine(edge_points_pixel[],remap_points_pixel)[0]
             
 
@@ -290,6 +290,8 @@ class Camera():
             #print(grid_pixel_coord.shape)
             for i in range(np.shape(grid_pixel_coord)[1]):
                 cv2.circle(self.GridFrame, (int(grid_pixel_coord[0,i]/z_camera_coord[i]), int(grid_pixel_coord[1,i]/z_camera_coord[i])), 3, (255,0,0), -1)
+
+            self.GridFrame = cv2.warpPerspective(self.GridFrame, self.homography_matrix, (self.GridFrame.shape[1], self.GridFrame.shape[0]))
 
     def BlockDetection(self):
         #self.DetectionFrame = self.VideoFrame.copy()
