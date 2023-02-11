@@ -2,9 +2,7 @@ import numpy as np
 import cv2
 
 def SortDetectedObjectsFunction(detected_object):
-    x = detected_object[0][0]
-    y = detected_object[0][1]
-    return np.sqrt(x*x + y*y)
+    return detected_object[4]
 
 
 def Depth2Position(depth_image, camera_object):
@@ -152,6 +150,8 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 distance1 = np.sqrt(np.square(box1_world[0] - box2_world[0]) + np.square(box1_world[1] - box2_world[1]) )
                 distance2 = np.sqrt(np.square(box2_world[0] - box3_world[0]) + np.square(box2_world[1] - box3_world[1]) )
 
+                
+
                 #theta = np.arctan2(abs(box2_world[1] - box1_world[0]),abs(box2_world[0] - box1_world[0]))
                 theta = rectangle[2]
 
@@ -185,11 +185,15 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                 #if center_world[2] < 16:
                 #    block_size_str = "curve"
 
+                
+                distance_from_robot = np.sqrt(center_world[0]*center_world[0] + center_world[1] * center_world[1])
 
-                detected_object = [center_world, theta, block_size_str, color[3]]
+                detected_object = [center_world, theta, block_size_str, color[3], distance_from_robot]
 
                 if block_size_str == "large" or block_size_str == "small":
                     detected_objects.append(detected_object)
+
+                #cv2.circle(rgb_image, (int(center[0]), int(center[1])), 3, (255,255,255), -1)
 
             cv2.drawContours(rgb_image, [box], 0, color[1] , 3)
             cv2.putText(rgb_image, block_size_str + ", " + color[0], (center[0] - 10, center[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness = 1)

@@ -411,18 +411,32 @@ class StateMachine():
         small_block_count = 0
         large_block_count = 0
 
-        initial_position = np.array([0.0, -1.5708, -0.7853, -1.5708, 0.0])
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
         self.rxarm.set_positions(initial_position)
-        rospy.sleep(5)
+        rospy.sleep(2)
 
-        while self.camera.detected_blocks:
-            print(self.camera.detected_blocks)
-            detected_block = self.camera.detected_blocks[0]
+        while len(self.camera.detected_blocks) > 0:
+            detected_blocks = self.camera.detected_blocks
+            num_blocks = len(detected_blocks)
+            detected_block = detected_blocks[0]
+
+            checking_for_stacked = 1
+            while checking_for_stacked < num_blocks:
+                
+                if detected_blocks[checking_for_stacked][4] - detected_block[4] > 80:
+                    break
+                else:
+                    if detected_blocks[checking_for_stacked][0][2] > detected_block[0][2] + 12:
+                        detected_block = detected_blocks[checking_for_stacked]
+                    checking_for_stacked += 1
+
+            
 
             # move to detected block, pick
             if detected_block[2] == "large":
-                if large_block_count > 9:
+                if large_block_count >= 9:
                     print("error: cannot place more than 9 large blocks")
+                    break
                 else:
                     if large_block_count < 6:
                         place_xyz = large_block_starting_place + large_block_x_offset * large_block_count
@@ -435,15 +449,16 @@ class StateMachine():
                     large_block_count = large_block_count +1
 
             else:
-                if small_block_count > 9:
+                if small_block_count >= 9:
                     print("error: cannot place more than 9 small blocks")
+                    break
                 else:
                     if small_block_count < 6:
                         place_xyz = small_block_starting_place + small_block_x_offset * small_block_count
                     else:
                         place_xyz = small_block_starting_place + small_block_x_offset * (small_block_count - 3) + small_block_z_offset
                     # move to detected_block[0] with orientation detected_block[1]
-                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
                     # move to large_block_starting_place + large_block_count * large_block_offset
                     kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
@@ -451,9 +466,13 @@ class StateMachine():
 
                     small_block_count = small_block_count +1
         
+        print("pick and sort task complete")
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(1)
         self.next_state = "idle"
                 
-
+    ######################################################################
 
     def pick_stack_task(self):
         print("Running task pick stack")
@@ -466,84 +485,222 @@ class StateMachine():
         max_large_tower_height = 9
         max_small_tower_height = 9
 
-        while self.camera.detected_blocks:
-            detected_block = self.camera.detected_blocks[0]
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(2)
+
+        while len(self.camera.detected_blocks) > 0:
+            detected_blocks = self.camera.detected_blocks
+            num_blocks = len(detected_blocks)
+            detected_block = detected_blocks[0]
+
+            checking_for_stacked = 1
+            while checking_for_stacked < num_blocks:
+                
+                if detected_blocks[checking_for_stacked][4] - detected_block[4] > 80:
+                    break
+                else:
+                    if detected_blocks[checking_for_stacked][0][2] > detected_block[0][2] + 12:
+                        detected_block = detected_blocks[checking_for_stacked]
+                    checking_for_stacked += 1
 
             # move to detected block, pick
             if detected_block[2] == "large":
                 
-                if large_block_count > max_large_tower_height:
+                if large_block_count >= max_large_tower_height:
                     print("error: cannot stack more blocks")
+                    break
                 else:
                     place_xyz = large_block_starting_place + large_block_z_offset * large_block_count
                     # move to detected_block[0] with orientation detected_block[1]
-                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    # place(place_xyz[0], place_xyz[1], place_xyz[2], np.pi/2)
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
                     large_block_count = large_block_count +1
 
             else:
                 
-                if small_block_count > max_small_tower_height:
+                if small_block_count >= max_small_tower_height:
                     print("error: cannot stack more blocks")
+                    break
                 else:
                     place_xyz = small_block_starting_place + small_block_z_offset * small_block_count 
                     # move to detected_block[0] with orientation detected_block[1]
-                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
-                small_block_count = small_block_count +1
-        
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                    small_block_count = small_block_count +1
+
+
+        print("pick and stack task complete")
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(1)
         self.next_state = "idle"
 
-    def line_up_task(self):
-        print("Running task line up")
-        #small_block_starting_place = np.array([75,-100,3])
-        #large_block_starting_place = np.array([-75,-100,3])
-        #small_block_offset = np.array([-(20+26), 0, 0])
-        #large_block_offset = np.array([12+38, 0, 0])
-        small_block_count = 0
-        large_block_count = 0
+        #####################################################
 
-        place_location_large_ROYGBV = []
-        place_location_small_ROYGBV = []
+    def line_up_task(self):
+
+        print("Running task line up")
+
+        place_location_large_ROYGBV = [np.array([350,-100,3]), np.array([300,-100,3]), np.array([250,-100,3]), np.array([200,-100,3]), np.array([150,-100,3]), np.array([100,-100,3])]
+        place_location_small_ROYGBV = [np.array([-350,-100,3]), np.array([-300,-100,3]), np.array([-250,-100,3]), np.array([-200,-100,3]), np.array([-150,-100,3]), np.array([-100,-100,3])]
         large_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
         small_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
 
-        while self.camera.detected_blocks:
-            detected_block = self.camera.detected_blocks[0]
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(2)
+
+        while len(self.camera.detected_blocks) > 0:
+            detected_blocks = self.camera.detected_blocks
+            num_blocks = len(detected_blocks)
+            detected_block = detected_blocks[0]
+
+            checking_for_stacked = 1
+            while checking_for_stacked < num_blocks:
+                
+                if detected_blocks[checking_for_stacked][4] - detected_block[4] > 80:
+                    break
+                else:
+                    if detected_blocks[checking_for_stacked][0][2] > detected_block[0][2] + 12:
+                        detected_block = detected_blocks[checking_for_stacked]
+                    checking_for_stacked += 1
 
             # move to detected block, pick
             if detected_block[2] == "large":
                 if large_blocks_placed_ROYGBV[detected_block[3]]:
                     print("error: already placed a large block of color")
                     print(detected_block[3])
+                    break
                 else:
                     place_xyz = place_location_large_ROYGBV[detected_block[3]]
                     # move to detected_block[0] with orientation detected_block[1]
-                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
                     large_blocks_placed_ROYGBV[detected_block[3]] = 1
+                    
                 
             else:
                 if large_blocks_placed_ROYGBV[detected_block[3]]:
                     print("error: already placed a small block of color")
                     print(detected_block[3])
+                    break
                 else:
                     place_xyz = place_location_small_ROYGBV[detected_block[3]]
                     # move to detected_block[0] with orientation detected_block[1]
-                    # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # move to small_block_starting_place + small_block_count * large_block_offset
-                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                    
                     small_blocks_placed_ROYGBV[detected_block[3]] = 1
 
+
+        print("line up task complete")
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(1)
         self.next_state = "idle"
                 
+
+    ###########################################################################
 
     def stack_colors_task(self):
         print("Running task stack colors")
 
 
+        small_block_stacking_place = np.array([-400,75,0])
+        large_block_stacking_place = np.array([400,75,0])
+        small_block_z_offset = np.array([0, 0, 26])
+        large_block_z_offset = np.array([0, 0, 39])
+
+        small_block_count = 0
+        large_block_count = 0
+
+
+        place_location_large_ROYGBV = [np.array([350,-100,3]), np.array([300,-100,3]), np.array([250,-100,3]), np.array([200,-100,3]), np.array([150,-100,3]), np.array([100,-100,3])]
+        place_location_small_ROYGBV = [np.array([-350,-100,3]), np.array([-300,-100,3]), np.array([-250,-100,3]), np.array([-200,-100,3]), np.array([-150,-100,3]), np.array([-100,-100,3])]
+        large_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
+        small_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
+
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(2)
+
+        while len(self.camera.detected_blocks) > 0:
+            detected_blocks = self.camera.detected_blocks
+            num_blocks = len(detected_blocks)
+            detected_block = detected_blocks[0]
+
+            checking_for_stacked = 1
+            while checking_for_stacked < num_blocks:
+                
+                if detected_blocks[checking_for_stacked][4] - detected_block[4] > 80:
+                    break
+                else:
+                    if detected_blocks[checking_for_stacked][0][2] > detected_block[0][2] + 12:
+                        detected_block = detected_blocks[checking_for_stacked]
+                    checking_for_stacked += 1
+
+            # move to detected block, pick
+            if detected_block[2] == "large":
+                if large_blocks_placed_ROYGBV[detected_block[3]]:
+                    print("error: already placed a large block of color")
+                    print(detected_block[3])
+                    break
+                else:
+                    place_xyz = place_location_large_ROYGBV[detected_block[3]]
+                    # move to detected_block[0] with orientation detected_block[1]
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
+                    # move to large_block_starting_place + large_block_count * large_block_offset
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                    large_blocks_placed_ROYGBV[detected_block[3]] = 1
+                    large_block_count += 1
+                    
+                
+            else:
+                if large_blocks_placed_ROYGBV[detected_block[3]]:
+                    print("error: already placed a small block of color")
+                    print(detected_block[3])
+                    break
+                else:
+                    place_xyz = place_location_small_ROYGBV[detected_block[3]]
+                    # move to detected_block[0] with orientation detected_block[1]
+                    kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
+                    # move to small_block_starting_place + small_block_count * large_block_offset
+                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                    small_blocks_placed_ROYGBV[detected_block[3]] = 1
+                    small_block_count += 1
+
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(2)
+                
+        for num_stacked_large_blocks in range(large_block_count):
+            place_xyz = large_block_stacking_place + large_block_z_offset * num_stacked_large_blocks
+            # move to detected_block[0] with orientation detected_block[1]
+            kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
+            # move to large_block_starting_place + large_block_count * large_block_offset
+            kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+
+
+        for num_stacked_small_blocks in range(small_block_count):
+            place_xyz = small_block_stacking_place + small_block_z_offset * num_stacked_small_blocks 
+            # move to detected_block[0] with orientation detected_block[1]
+            kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
+            # move to large_block_starting_place + large_block_count * large_block_offset
+            kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+
+
+
+
+
+        print("stack color task complete")
+        initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+        self.rxarm.set_positions(initial_position)
+        rospy.sleep(1)
         self.next_state = "idle"
         
 
