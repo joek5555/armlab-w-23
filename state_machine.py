@@ -372,7 +372,7 @@ class StateMachine():
         x = xyz_coord[0,0]
         y = xyz_coord[1,0]
         z = xyz_coord[2,0]
-        pose = np.array([x, y, z])
+        pose = np.array([x, y, z+20])
         kinematics.go_to(pose, False, self)
         '''
         if self.picked_block:
@@ -415,8 +415,10 @@ class StateMachine():
         small_block_count = 0
         large_block_count = 0
 
-        move_time = 0
-        accel_time = 0
+        #move_time = 3.0
+        #accel_time = 1.0
+        move_time = 1.5
+        accel_time = 2.0
         self.rxarm.set_moving_time(move_time)
         self.rxarm.set_accel_time(accel_time)
 
@@ -495,6 +497,8 @@ class StateMachine():
         max_large_tower_height = 9
         max_small_tower_height = 9
 
+        #move_time = 3.0
+        #accel_time = 1.0
         move_time = 0
         accel_time = 0
         self.rxarm.set_moving_time(move_time)
@@ -568,6 +572,8 @@ class StateMachine():
         large_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
         small_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
 
+        #move_time = 3.0
+        #accel_time = 1.0
         move_time = 0
         accel_time = 0
         self.rxarm.set_moving_time(move_time)
@@ -646,6 +652,8 @@ class StateMachine():
 
         x_offset_place = -5
 
+        #move_time = 3.0
+        #accel_time = 1.0
         move_time = 0
         accel_time = 0
         self.rxarm.set_moving_time(move_time)

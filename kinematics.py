@@ -16,6 +16,8 @@ import math
 
 pick_offset_big = -35
 pick_offset_small = -25
+pick_offset_big_side = -35
+pick_offset_small_side = -5
 place_offset_big = 5
 place_offset_small = 5
 pick_approach_offset = 25
@@ -380,8 +382,9 @@ def IK_geometric(pose):
         if j1_1 > 0.2613:
             j1_1 += 0.02007*j1_1 + 1.639*np.pi/180
         
-        #elif j1_1 < -0.2613:
-            #j1_1 -= 0.02007*(-j1_1) + 1.639*np.pi/180
+        elif j1_1 < -0.1526:
+            s = 1.7
+            j1_1 -= s * 0.0361*j1_1 - 0.01868
     '''
     #print out results
     print("First Combination: ")
@@ -510,16 +513,19 @@ def pick_block(x, y, z, angle, self, is_big = True):
     #prevent touching the plate
     if z < 10:
         z = 50
+    pick_from_top = can_from_top(x,y,z, pick_approach_offset)
     if is_big:
         pick_offset = pick_offset_big
-    else:
+    elif is_big and pick_from_top:
         pick_offset = pick_offset_small
-
-    pick_from_top = can_from_top(x,y,z, pick_approach_offset)
+    else:
+        pick_offset = pick_offset_small_side
+    
     if pick_from_top:
         sleep_time = sleep_time_top
     else:
         sleep_time = sleep_time_side
+        
 
     pose_approach = np.array([x, y, z+pick_approach_offset])
     valid_approach = go_to(pose_approach, pick_from_top, self, angle,sleep_time, sleep_time_base)
