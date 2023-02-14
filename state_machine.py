@@ -372,6 +372,9 @@ class StateMachine():
         x = xyz_coord[0,0]
         y = xyz_coord[1,0]
         z = xyz_coord[2,0]
+        pose = np.array([x, y, z])
+        kinematics.go_to(pose, False, self)
+        '''
         if self.picked_block:
             valid_place = kinematics.place_block(x, y, z, self, is_big)
             if valid_place:
@@ -384,6 +387,7 @@ class StateMachine():
                 print("Block picked")
             else:
                 print("Failed(pick)")
+        '''
 
         self.next_state = "idle"
 
@@ -403,7 +407,7 @@ class StateMachine():
 
         print("Running task pick sort")
         small_block_starting_place = np.array([-350,-100,3])
-        large_block_starting_place = np.array([350,-100,3])
+        large_block_starting_place = np.array([345,-100,3])
         small_block_x_offset = np.array([50, 0, 0])
         large_block_x_offset = np.array([-50, 0, 0])
         small_block_z_offset = np.array([0, 0, 26])
@@ -445,8 +449,9 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
-                    large_block_count = large_block_count +1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                        large_block_count = large_block_count +1
 
             else:
                 if small_block_count >= 9:
@@ -461,10 +466,9 @@ class StateMachine():
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # pick(detected_block[0][0], detected_block[0][1], detected_block[0][2], detected_block[1])
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
-                    # place(place_xyz[0], place_xyz[1], place_xyz[2], -np.pi/2)
-
-                    small_block_count = small_block_count +1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                        small_block_count = small_block_count +1
         
         print("pick and sort task complete")
         initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
@@ -515,8 +519,9 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
-                    large_block_count = large_block_count +1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                        large_block_count = large_block_count +1
 
             else:
                 
@@ -528,8 +533,9 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
-                    small_block_count = small_block_count +1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                        small_block_count = small_block_count +1
 
 
         print("pick and stack task complete")
@@ -579,8 +585,9 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
-                    large_blocks_placed_ROYGBV[detected_block[3]] = 1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                        large_blocks_placed_ROYGBV[detected_block[3]] = 1
                     
                 
             else:
@@ -593,9 +600,9 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # move to small_block_starting_place + small_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
-                    
-                    small_blocks_placed_ROYGBV[detected_block[3]] = 1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                        small_blocks_placed_ROYGBV[detected_block[3]] = 1
 
 
         print("line up task complete")
@@ -619,9 +626,11 @@ class StateMachine():
         small_block_count = 0
         large_block_count = 0
 
+        x_offset_place = -5
 
-        place_location_large_ROYGBV = [np.array([350,-100,3]), np.array([300,-100,3]), np.array([250,-100,3]), np.array([200,-100,3]), np.array([150,-100,3]), np.array([100,-100,3])]
-        place_location_small_ROYGBV = [np.array([-350,-100,3]), np.array([-300,-100,3]), np.array([-250,-100,3]), np.array([-200,-100,3]), np.array([-150,-100,3]), np.array([-100,-100,3])]
+
+        place_location_large_ROYGBV = [np.array([350 + x_offset_place,-100,1]), np.array([300 + x_offset_place,-100,1]), np.array([250+ x_offset_place,-100,1]), np.array([200+ x_offset_place,-100,1]), np.array([150+ x_offset_place,-100,1]), np.array([100+ x_offset_place,-100,1])]
+        place_location_small_ROYGBV = [np.array([-350,-100,1]), np.array([-300,-100,1]), np.array([-250,-100,1]), np.array([-200,-100,1]), np.array([-150,-100,1]), np.array([-100,-100,1])]
         large_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
         small_blocks_placed_ROYGBV = [0,0,0,0,0,0,0]
 
@@ -630,6 +639,7 @@ class StateMachine():
         rospy.sleep(2)
 
         while len(self.camera.detected_blocks) > 0:
+            print(len(self.camera.detected_blocks))
             detected_blocks = self.camera.detected_blocks
             num_blocks = len(detected_blocks)
             detected_block = detected_blocks[0]
@@ -655,13 +665,14 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
                     # move to large_block_starting_place + large_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
-                    large_blocks_placed_ROYGBV[detected_block[3]] = 1
-                    large_block_count += 1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                        large_blocks_placed_ROYGBV[detected_block[3]] = 1
+                        large_block_count += 1
                     
                 
             else:
-                if large_blocks_placed_ROYGBV[detected_block[3]]:
+                if small_blocks_placed_ROYGBV[detected_block[3]]:
                     print("error: already placed a small block of color")
                     print(detected_block[3])
                     break
@@ -670,28 +681,78 @@ class StateMachine():
                     # move to detected_block[0] with orientation detected_block[1]
                     kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
                     # move to small_block_starting_place + small_block_count * large_block_offset
-                    kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
-                    small_blocks_placed_ROYGBV[detected_block[3]] = 1
-                    small_block_count += 1
+                    if self.picked_block:
+                        kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                        small_blocks_placed_ROYGBV[detected_block[3]] = 1
+                        small_block_count += 1
 
         initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
         self.rxarm.set_positions(initial_position)
         rospy.sleep(2)
+        print("stacking colors now")
                 
         for num_stacked_large_blocks in range(large_block_count):
             place_xyz = large_block_stacking_place + large_block_z_offset * num_stacked_large_blocks
-            # move to detected_block[0] with orientation detected_block[1]
-            kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = True)
+
+            if large_blocks_placed_ROYGBV[5]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[5][0] + x_offset_place, y = place_location_large_ROYGBV[5][1], z = place_location_large_ROYGBV[5][2]+ 40, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[5] = 0
+            elif large_blocks_placed_ROYGBV[4]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[4][0] + x_offset_place, y = place_location_large_ROYGBV[4][1], z = place_location_large_ROYGBV[4][2]+ 40, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[4] = 0
+            elif large_blocks_placed_ROYGBV[3]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[3][0] + x_offset_place, y = place_location_large_ROYGBV[3][1], z = place_location_large_ROYGBV[3][2]+ 40, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[3] = 0
+            elif large_blocks_placed_ROYGBV[2]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[2][0] + x_offset_place, y = place_location_large_ROYGBV[2][1], z = place_location_large_ROYGBV[2][2]+ 40, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[2] = 0
+            elif large_blocks_placed_ROYGBV[1]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[1][0] + x_offset_place, y = place_location_large_ROYGBV[1][1], z = place_location_large_ROYGBV[1][2]+ 40, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[1] = 0
+            elif large_blocks_placed_ROYGBV[0]:
+                kinematics.pick_block(x = place_location_large_ROYGBV[0][0] + x_offset_place, y = place_location_large_ROYGBV[0][1], z = place_location_large_ROYGBV[0][2]+ 44, angle = np.pi/2, self= self, is_big = True)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+                large_blocks_placed_ROYGBV[0] = 0
             # move to large_block_starting_place + large_block_count * large_block_offset
-            kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
+            #kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = True, angle= np.pi/2)
 
 
         for num_stacked_small_blocks in range(small_block_count):
             place_xyz = small_block_stacking_place + small_block_z_offset * num_stacked_small_blocks 
-            # move to detected_block[0] with orientation detected_block[1]
-            kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = detected_block[1], self= self, is_big = False)
+            
+            if small_blocks_placed_ROYGBV[0]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[0][0], y = place_location_small_ROYGBV[0][1], z = place_location_small_ROYGBV[0][2] + 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[0] = 0
+            elif small_blocks_placed_ROYGBV[1]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[1][0], y = place_location_small_ROYGBV[1][1], z = place_location_small_ROYGBV[1][2] + 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[1] = 0
+            elif small_blocks_placed_ROYGBV[2]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[2][0], y = place_location_small_ROYGBV[2][1], z = place_location_small_ROYGBV[2][2]+ 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[2] = 0
+            elif small_blocks_placed_ROYGBV[3]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[3][0], y = place_location_small_ROYGBV[3][1], z = place_location_small_ROYGBV[3][2]+ 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[3] = 0
+            elif small_blocks_placed_ROYGBV[4]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[4][0], y = place_location_small_ROYGBV[4][1], z = place_location_small_ROYGBV[4][2]+ 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[4] = 0
+            elif small_blocks_placed_ROYGBV[5]:
+                kinematics.pick_block(x = place_location_small_ROYGBV[5][0], y = place_location_small_ROYGBV[5][1], z = place_location_small_ROYGBV[5][2]+ 25, angle = -np.pi/2, self= self, is_big = False)
+                kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+                small_blocks_placed_ROYGBV[5] = 0
+
+            #kinematics.pick_block(x = detected_block[0][0], y = detected_block[0][1], z = detected_block[0][2], angle = -np.pi/2, self= self, is_big = False)
             # move to large_block_starting_place + large_block_count * large_block_offset
-            kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
+            #kinematics.place_block(x=place_xyz[0], y=place_xyz[1], z=place_xyz[2], self=self, is_big = False, angle= -np.pi/2)
 
 
 

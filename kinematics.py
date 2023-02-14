@@ -15,16 +15,18 @@ import rospy
 import math
 
 pick_offset_big = -35
-pick_offset_small = -20
+pick_offset_small = -25
 place_offset_big = 5
 place_offset_small = 5
-pick_approach_offset = 40
+pick_approach_offset = 25
 place_approach_offset = 60
 
-sleep_time_top = 3
-sleep_time_side = 5
-sleep_time_base = 3
+sleep_time_top = 3-1
+sleep_time_side = 5-1
+sleep_time_base = 3-1
 sleep_time_approach = 2
+
+store_location = [0, 175, 30]
 
 #data of arm in mm
 l1 = 103.91
@@ -377,8 +379,9 @@ def IK_geometric(pose):
     if p2 != np.pi:
         if j1_1 > 0.2613:
             j1_1 += 0.02007*j1_1 + 1.639*np.pi/180
-        elif j1_1 < -0.2613:
-            j1_1 -= 0.02007*(-j1_1) + 1.639*np.pi/180
+        
+        #elif j1_1 < -0.2613:
+            #j1_1 -= 0.02007*(-j1_1) + 1.639*np.pi/180
     '''
     #print out results
     print("First Combination: ")
@@ -528,10 +531,10 @@ def pick_block(x, y, z, angle, self, is_big = True):
             self.picked_block = True
             go_to(pose_approach, pick_from_top, self, angle, sleep_time_approach)
             move_joint(1, -np.pi/4, self.rxarm.get_positions(), self, sleep_time_base)
-            move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
+            #move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
             if pick_from_top == False:
-                store_location = [300, -75, 0]
-                place_block(store_location[0], store_location[1], store_location[2],pick_from_top, self)
+                
+                place_block(store_location[0], store_location[1], store_location[2], self, is_big)
             return True
         else:
             print("Can't pick block")
@@ -561,8 +564,8 @@ def place_block(x, y, z, self, is_big, angle = np.pi/2):
             self.rxarm.open_gripper()
             self.picked_block = False
             go_to(pose_approach, place_from_top, self, angle, sleep_time_approach)
-            move_joint(1, -np.pi/4, self.rxarm.get_positions(), self, sleep_time_base)
-            move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
+            move_joint(1, -np.pi/3, self.rxarm.get_positions(), self, sleep_time_base)
+            #move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
             return True
         else:
             print("Can't place block")
