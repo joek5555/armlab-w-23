@@ -499,8 +499,8 @@ class StateMachine():
 
         #move_time = 3.0
         #accel_time = 1.0
-        move_time = 0
-        accel_time = 0
+        move_time = 1.5
+        accel_time = 2.0
         self.rxarm.set_moving_time(move_time)
         self.rxarm.set_accel_time(accel_time)
 
@@ -574,8 +574,8 @@ class StateMachine():
 
         #move_time = 3.0
         #accel_time = 1.0
-        move_time = 0
-        accel_time = 0
+        move_time = 1.5
+        accel_time = 2.0
         self.rxarm.set_moving_time(move_time)
         self.rxarm.set_accel_time(accel_time)
 
@@ -654,8 +654,8 @@ class StateMachine():
 
         #move_time = 3.0
         #accel_time = 1.0
-        move_time = 0
-        accel_time = 0
+        move_time = 1.5
+        accel_time = 2.0
         self.rxarm.set_moving_time(move_time)
         self.rxarm.set_accel_time(accel_time)
 

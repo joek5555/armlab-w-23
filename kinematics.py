@@ -16,10 +16,10 @@ import math
 
 pick_offset_big = -35
 pick_offset_small = -25
-pick_offset_big_side = -35
+#pick_offset_big_side = -35
 pick_offset_small_side = -5
-place_offset_big = 5
-place_offset_small = 5
+place_offset_big = 3
+place_offset_small = 4
 pick_approach_offset = 25
 place_approach_offset = 60
 
@@ -378,13 +378,25 @@ def IK_geometric(pose):
     j3_2_2 = clamp(j3_2_2)
     j4_2_2 = clamp(j4_2_2)
     j5_2_2 = clamp(j5_2_2)
+    '''
     if p2 != np.pi:
         if j1_1 > 0.2613:
             j1_1 += 0.02007*j1_1 + 1.639*np.pi/180
         
         elif j1_1 < -0.1526:
-            s = 1.7
-            j1_1 -= s * 0.0361*j1_1 - 0.01868
+            a = 1
+            b = 1
+            j1_1 -= a * 0.0361*j1_1 - b*0.01868
+    '''
+    if j1_1 < -0.2613:
+        c = 1.2
+        d = 1
+        j1_1 -= -c*0.02007*j1_1 + 0.0286
+        
+    elif j1_1 > 0.1526:
+        a = 1
+        b = 1
+        j1_1 -= a * 0.0361*j1_1 - b*0.01868
     '''
     #print out results
     print("First Combination: ")
@@ -433,6 +445,8 @@ def choose_joint_combination(joint_combinations):
         return desired_combination
 
 def is_valid(desired_joint_combination):
+    print("Desired joint combination:")
+    print(desired_joint_combination)
     if desired_joint_combination[1] == -1000:
         return False
     else:
@@ -511,12 +525,13 @@ def go_to(pose, from_top, self, angle=np.pi/2, sleep_time = 4, sleep_time_base =
 
 def pick_block(x, y, z, angle, self, is_big = True):
     #prevent touching the plate
+    y += 5
     if z < 10:
         z = 50
     pick_from_top = can_from_top(x,y,z, pick_approach_offset)
     if is_big:
         pick_offset = pick_offset_big
-    elif is_big and pick_from_top:
+    elif is_big == False and pick_from_top:
         pick_offset = pick_offset_small
     else:
         pick_offset = pick_offset_small_side
