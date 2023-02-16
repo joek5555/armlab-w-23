@@ -170,12 +170,18 @@ def DetectBlocks(rgb_image, depth_image, camera_object):
                     distance2 = temp
 
 
-                if distance1 < 33:
+                if distance1 < 33 or center_world[2] < 30:
                     block_size_str = "small"
                     #print("small block")
+
+                
                 else:
                     block_size_str = "large"
                     #print("large block")
+
+                #if color[3] == 0 and distance1 < 35:
+                #    block_size_str = "small"
+                    #print("small block")
                 side_ratio = distance1/distance2
                 #print("side_ratio")
                 #print(side_ratio)

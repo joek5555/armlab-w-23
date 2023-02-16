@@ -15,18 +15,30 @@ import rospy
 import math
 
 pick_offset_big = -35
-pick_offset_small = -25
+pick_offset_small = -25 + 5
+pick_offset_big_side = -5
 #pick_offset_big_side = -35
-pick_offset_small_side = -5
+pick_offset_small_side = -5 + 10
 place_offset_big = 3
 place_offset_small = 4
-pick_approach_offset = 25
-place_approach_offset = 60
+pick_approach_offset1 = 25
+place_approach_offset1 = 60
 
-sleep_time_top = 3-1
-sleep_time_side = 5-1
-sleep_time_base = 3-1
-sleep_time_approach = 2
+
+pick_n_sort = False
+
+pick_n_stack = True
+
+if pick_n_sort:
+    sleep_time_top = 3-1.75
+    sleep_time_side = 5-3.5
+    sleep_time_base = 3-1.75
+    sleep_time_approach = 2 -.75
+else:
+    sleep_time_top = 3-1.5
+    sleep_time_side = 5-3
+    sleep_time_base = 3-1.25
+    sleep_time_approach = 2 - .5
 
 store_location = [0, 175, 30]
 
@@ -526,11 +538,16 @@ def go_to(pose, from_top, self, angle=np.pi/2, sleep_time = 4, sleep_time_base =
 def pick_block(x, y, z, angle, self, is_big = True):
     #prevent touching the plate
     y += 5
-    if z < 10:
-        z = 50
+    if pick_n_stack and is_big == False:
+        y += 5
+    #if z < 10:
+    #    z = 50
+    pick_approach_offset =pick_approach_offset1
     pick_from_top = can_from_top(x,y,z, pick_approach_offset)
-    if is_big:
+    if is_big and pick_from_top:
         pick_offset = pick_offset_big
+    elif is_big and pick_from_top == False:
+        pick_offset = pick_offset_big_side
     elif is_big == False and pick_from_top:
         pick_offset = pick_offset_small
     else:
@@ -540,6 +557,12 @@ def pick_block(x, y, z, angle, self, is_big = True):
         sleep_time = sleep_time_top
     else:
         sleep_time = sleep_time_side
+
+        pick_approach_offset = pick_approach_offset + 10
+
+        if is_big == False and x < 0:
+            x = x -5
+            y = y + 5
         
 
     pose_approach = np.array([x, y, z+pick_approach_offset])
@@ -551,11 +574,14 @@ def pick_block(x, y, z, angle, self, is_big = True):
             self.rxarm.close_gripper()
             self.picked_block = True
             go_to(pose_approach, pick_from_top, self, angle, sleep_time_approach)
-            move_joint(1, -np.pi/4, self.rxarm.get_positions(), self, sleep_time_base)
+            move_joint(1, -np.pi/6, self.rxarm.get_positions(), self, sleep_time_base)
             #move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
-            if pick_from_top == False:
+            if pick_from_top == False and pick_n_sort == False:
                 
                 place_block(store_location[0], store_location[1], store_location[2], self, is_big)
+                initial_position = np.array([0.0, -1.3962, -0.7853, -1.5708, 0.0])
+                self.rxarm.set_positions(initial_position)
+                rospy.sleep(1)
             return True
         else:
             print("Can't pick block")
@@ -565,6 +591,7 @@ def pick_block(x, y, z, angle, self, is_big = True):
         return False
 
 def place_block(x, y, z, self, is_big, angle = np.pi/2):
+    place_approach_offset = place_approach_offset1
     place_from_top = can_from_top(x,y,z, place_approach_offset)
 
     if place_from_top:
@@ -576,7 +603,16 @@ def place_block(x, y, z, self, is_big, angle = np.pi/2):
     else:
         place_offset = place_offset_small
 
+    if pick_n_sort and is_big:
+        place_offset = place_offset + 40
+        place_approach_offset = place_approach_offset + 40
+    if pick_n_sort and is_big == False:
+        place_offset = place_offset + 25
+        place_approach_offset = place_approach_offset + 25
+
     pose_approach = np.array([x, y, z+place_approach_offset])
+    print("Approaching ---- ")
+    print(pose_approach)
     valid_approach = go_to(pose_approach, place_from_top, self, angle, sleep_time, sleep_time_base)
     if valid_approach:
         pose_place = np.array([x, y, z+place_offset])
@@ -585,7 +621,7 @@ def place_block(x, y, z, self, is_big, angle = np.pi/2):
             self.rxarm.open_gripper()
             self.picked_block = False
             go_to(pose_approach, place_from_top, self, angle, sleep_time_approach)
-            move_joint(1, -np.pi/3, self.rxarm.get_positions(), self, sleep_time_base)
+            move_joint(1, -np.pi/6, self.rxarm.get_positions(), self, sleep_time_base)
             #move_joint(2, 0, self.rxarm.get_positions(), self, sleep_time_base)
             return True
         else:
