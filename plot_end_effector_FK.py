@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 import kinematics
 
@@ -26,18 +27,39 @@ S_list.append(kinematics.to_s_matrix(w3,v3))
 S_list.append(kinematics.to_s_matrix(w4,v4))
 S_list.append(kinematics.to_s_matrix(w5,v5))
 
-
+# open file and read each line
 with open('joint_positions.txt') as file:
     list_of_lines = file.readlines()
 
+
+# create arrays to store x, y, and z data
+x = np.zeros(len(list_of_lines))
+y = np.zeros(len(list_of_lines))
+z = np.zeros(len(list_of_lines))
+i = 0
+
+# for each line in the text file, get the joint angles, pass through forward kinematics, and store end effector position
 for joint_position_str in list_of_lines:
     
     joint_position_str_list = joint_position_str.split()
-    joint_positions = float(joint_position_str_list)
-    print(joint_positions)
+    joint_angles = np.array([float(joint_position_str_list[0]), float(joint_position_str_list[1]), float(joint_position_str_list[2]), float(joint_position_str_list[3]), float(joint_position_str_list[4])])
 
-    #Tq = kinematics.FK_pox(joint_angles, M_matrix, S_list)
-    #pos = kinematics.get_pose_from_T(Tq)
-#angles = kinematics.get_euler_angles_from_T(Tq)
 
-#return [pos[0], pos[1], pos[2], angles[0], angles[1], angles[2]]
+    Tq = kinematics.FK_pox(joint_angles, M_matrix, S_list)
+    pos = kinematics.get_pose_from_T(Tq)
+    x[i] = pos[0]
+    y[i] = pos[1]
+    z[i] = pos[2]
+    i += 1
+
+
+# plot the end effector position
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('z')
+ax.scatter3D(x, y, z, )
+
+plt.show()
