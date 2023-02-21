@@ -73,12 +73,12 @@ class Camera():
         self.block_contours = np.array([])
         self.block_detections = np.array([])
 
-        self.red_threshold = np.array([[165,4], [108,255], [38,255]], dtype= np.float32)
-        self.orange_threshold = np.array([[4,14], [120,255], [47,255]], dtype= np.float32)
-        self.yellow_threshold = np.array([[21,27], [158, 255], [68, 255]], dtype= np.float32)
+        self.red_threshold = np.array([[165,2], [80,255], [20,255]], dtype= np.float32)
+        self.orange_threshold = np.array([[3,14], [120,255], [47,255]], dtype= np.float32)
+        self.yellow_threshold = np.array([[21,27], [158, 255], [50, 255]], dtype= np.float32)
         self.green_threshold = np.array([[65, 88], [100,255], [53, 255]], dtype= np.float32)
         self.blue_threshold = np.array([[100, 109], [151, 255], [52,255]], dtype= np.float32)
-        self.purple_threshold = np.array([[110, 157], [48, 255], [30,255]], dtype= np.float32)
+        self.purple_threshold = np.array([[110, 157], [45, 255], [25,255]], dtype= np.float32)
         # (color_str, color_BGR, color_threshold)
         self.colors = [("red", (255, 0, 0), self.red_threshold, 0), 
                         ("orange", (255, 165, 0), self.orange_threshold, 1), 
@@ -87,7 +87,7 @@ class Camera():
                         ("blue", (0,0,255), self.blue_threshold, 4), 
                         ("purple", (160, 32, 240), self.purple_threshold, 5)]
 
-        self.xy_threshold = np.array([[-500, 500], [-175, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
+        self.xy_threshold = np.array([[-500, 500], [-10, 475], [-5000,5000]], dtype= np.float32) # note, no threshold on z, ((x_low, x_high),(y_low, y_high), (z_low, z_high))
         self.erosion_kernel_size = 1
         self.erosion_kernel_shape = 0 # 0 is rectangle
         self.dilation_kernel_size = 1
